@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KARL · OPS Dashboard</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#0d120c; --bg2:#111a12; --surface:#141f16; --surface2:#1a2a1c;
+    --border:#22331f; --border2:#2c4029;
+    --txt:#e8f2d8; --txt2:#8fa583; --txt3:#4d5f47;
+    --dgreen:#1d3624; --green:#a4c868; --gdim:rgba(164,200,104,.10);
+    --pale:#e8f2d8;
+    --amber:#f5c842; --adim:rgba(245,200,66,.10);
+    --red:#e5534b; --rdim:rgba(229,83,75,.10);
+    --blue:#7fb0d9; --bdim:rgba(127,176,217,.10);
+    --mono:'SF Mono','Fira Code','Consolas',monospace;
+    --sans:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+  }
+  body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:13px;line-height:1.55;padding:14px 16px 28px;min-height:100vh;}
+
+  .hd{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 18px;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+  .hd-left{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .logo{font-family:var(--mono);font-size:15px;font-weight:700;letter-spacing:.12em;color:var(--green);}
+  .badge{font-family:var(--mono);font-size:10px;color:var(--txt2);background:var(--bg2);border:1px solid var(--border2);border-radius:3px;padding:2px 9px;}
+  .badge b{color:var(--green);}
+  .hd-right{font-family:var(--mono);font-size:10px;color:var(--txt3);}
+
+  .health-bar{display:flex;align-items:center;gap:12px;padding:9px 16px;border-radius:6px;margin-bottom:14px;border:1px solid;font-size:12px;flex-wrap:wrap;}
+  .health-bar.amber{background:var(--adim);border-color:rgba(245,200,66,.25);color:var(--amber);}
+  .health-bar.green{background:var(--gdim);border-color:rgba(164,200,104,.25);color:var(--green);}
+  .health-label{font-family:var(--mono);font-weight:700;font-size:10px;letter-spacing:.1em;}
+  .health-msg{color:var(--txt);}
+
+  .sl{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt3);display:flex;align-items:center;gap:10px;margin-bottom:10px;margin-top:4px;}
+  .sl::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .mb{margin-bottom:14px;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;}
+  .ch{display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:6px;}
+  .ct{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);}
+
+  .pill{font-family:var(--mono);font-size:9px;letter-spacing:.06em;padding:2px 8px;border-radius:3px;text-transform:uppercase;font-weight:700;white-space:nowrap;}
+  .pg{background:var(--gdim);color:var(--green);border:1px solid rgba(164,200,104,.25);}
+  .pa{background:var(--adim);color:var(--amber);border:1px solid rgba(245,200,66,.25);}
+  .pr{background:var(--rdim);color:var(--red);border:1px solid rgba(229,83,75,.25);}
+  .pb{background:var(--bdim);color:var(--blue);border:1px solid rgba(127,176,217,.25);}
+  .pm{background:rgba(255,255,255,.04);color:var(--txt3);border:1px solid var(--border);}
+
+  .kv{font-family:var(--mono);font-size:26px;font-weight:700;line-height:1;margin-bottom:3px;}
+  .kl{font-size:11px;color:var(--txt2);margin-bottom:4px;}
+  .kt{font-family:var(--mono);font-size:9px;color:var(--txt3);}
+  .kt b{color:var(--green);}
+
+  .wk{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;}
+  .wk.now{border-color:var(--green);box-shadow:0 0 0 1px rgba(164,200,104,.18),0 0 24px rgba(164,200,104,.08);}
+  .wk-hd{padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;}
+  .wk-title{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--txt2);}
+  .wk.now .wk-title{color:var(--green);}
+  .wk-dates{font-family:var(--mono);font-size:9px;color:var(--txt3);}
+  .wk-obj{padding:7px 13px;font-size:10.5px;color:var(--txt2);border-bottom:1px solid var(--border);font-style:italic;}
+  .task-ul{list-style:none;padding:8px 13px;flex:1;}
+  .ti{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03);}
+  .ti:last-child{border-bottom:none;}
+  .tc{width:13px;height:13px;border:1px solid var(--border2);border-radius:2px;background:transparent;cursor:pointer;appearance:none;-webkit-appearance:none;flex-shrink:0;margin-top:3px;position:relative;transition:all .15s;}
+  .tc:checked{background:var(--green);border-color:var(--green);}
+  .tc:checked::after{content:'✓';position:absolute;top:-2px;left:1px;font-size:10px;color:#0d120c;font-weight:900;}
+  .tt{font-size:11px;color:var(--txt);line-height:1.4;}
+  .tt.done{text-decoration:line-through;color:var(--txt3);}
+  .ag-tag{font-family:var(--mono);font-size:8px;letter-spacing:.04em;padding:0 5px;border-radius:2px;margin-left:4px;flex-shrink:0;align-self:center;white-space:nowrap;}
+  .t-wd{color:var(--blue);background:var(--bdim);}
+  .t-em{color:var(--amber);background:var(--adim);}
+  .t-pm{color:#e29fd6;background:rgba(226,159,214,.10);}
+  .t-cb{color:var(--green);background:var(--gdim);}
+  .t-seo{color:#7fd9c4;background:rgba(127,217,196,.10);}
+  .t-li{color:#7fa8d9;background:rgba(127,168,217,.10);}
+  .t-da{color:#d9c47f;background:rgba(217,196,127,.10);}
+  .t-lr{color:#e08a6b;background:rgba(224,138,107,.10);}
+  .t-de{color:#c99ee0;background:rgba(201,158,224,.10);}
+  .t-ms{color:#e0c99e;background:rgba(224,201,158,.10);}
+  .t-ea{color:var(--txt2);background:rgba(255,255,255,.05);}
+  .wk-ft{padding:7px 13px;background:rgba(0,0,0,.2);border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;color:var(--txt3);}
+
+  .ch-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+  .ch-item:last-child{border-bottom:none;padding-bottom:0;}
+  .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+  .dot.r{background:var(--red);box-shadow:0 0 7px var(--red);}
+  .dot.a{background:var(--amber);box-shadow:0 0 7px var(--amber);}
+  .dot.b{background:var(--blue);box-shadow:0 0 7px var(--blue);}
+  .dot.g{background:var(--green);box-shadow:0 0 7px var(--green);}
+  .ch-title{font-size:12px;font-weight:600;margin-bottom:2px;}
+  .ch-desc{font-size:11px;color:var(--txt2);line-height:1.4;}
+  .ch-who{font-family:var(--mono);font-size:9px;color:var(--txt3);margin-top:3px;}
+
+  .ag-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .ag-row:last-child{border-bottom:none;}
+  .ag-ind{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .ag-name{font-size:12px;font-weight:600;color:var(--txt);}
+  .ag-task{font-size:10.5px;color:var(--txt2);}
+
+  .mt-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+  .mt-item:last-child{border-bottom:none;padding-bottom:0;}
+  .mt-num{font-family:var(--mono);font-size:10px;color:var(--green);width:16px;flex-shrink:0;}
+  .mt-title{font-size:12px;font-weight:600;color:var(--txt);margin-bottom:2px;}
+  .mt-desc{font-size:11px;color:var(--txt2);line-height:1.4;}
+  .mt-meta{font-family:var(--mono);font-size:9px;color:var(--txt3);margin-top:3px;}
+
+  .footer{font-family:var(--mono);font-size:9px;color:var(--txt3);text-align:right;margin-top:16px;}
+
+  @media (max-width:1200px){.g4{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:900px){.g4,.g3{grid-template-columns:1fr 1fr;}}
+  @media (max-width:600px){.g4,.g3{grid-template-columns:1fr;}}
+
+  /* ---------- PESTAÑAS ---------- */
+  .tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+  .tab{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--txt2);cursor:pointer;}
+  .tab:hover{color:var(--txt);}
+  .tab.on{color:var(--green);border-color:var(--green);background:var(--surface2);box-shadow:0 0 0 1px rgba(164,200,104,.18);}
+  .tabpane[hidden]{display:none!important;}
+
+  /* ---------- OFICINA (pixel art) ---------- */
+  .of-hud{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:10px;}
+  .of-title{font-family:'Pixelify Sans',var(--mono);font-size:20px;font-weight:600;color:var(--green);line-height:1.2;}
+  .of-sub{font-family:var(--mono);font-size:10px;color:var(--txt3);margin-top:2px;}
+  .of-stats{display:flex;gap:6px;flex-wrap:wrap;}
+  .of-stat{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:3px;background:var(--bg2);border:1px solid var(--border2);color:var(--txt2);white-space:nowrap;}
+  .of-stat b{color:var(--txt);}
+  .of-btn{font-family:'Pixelify Sans',var(--mono);font-size:13px;padding:5px 12px;border:2px solid var(--green);background:var(--dgreen);color:var(--green);cursor:pointer;box-shadow:3px 3px 0 #000;border-radius:0;}
+  .of-btn:hover{filter:brightness(1.15);}
+  .of-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 #000;}
+  .of-btn.on{background:var(--amber);color:#1b1b12;border-color:#1b1b12;}
+  .of-btn.sm{font-size:13px;padding:2px 9px;box-shadow:2px 2px 0 #000;}
+  .of-banner{font-family:'Pixelify Sans',var(--mono);font-size:14px;padding:7px 12px;margin-bottom:10px;border:2px dashed var(--amber);color:var(--amber);background:var(--adim);display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+  .of-banner[hidden]{display:none;}
+  .of-wrap{position:relative;width:100%;max-width:1280px;margin:0 auto;background:#0a0f09;border:3px solid #050805;box-shadow:0 0 0 2px var(--dgreen),6px 6px 0 #000;overflow:hidden;}
+  .of-stage{position:absolute;left:0;top:0;width:512px;height:336px;transform-origin:0 0;}
+  .of-stage canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block;}
+  #of-bg{position:absolute;left:0;top:0;width:512px;height:336px;}
+  .of-desk{position:absolute;width:60px;height:36px;pointer-events:none;}
+  .of-plate{position:absolute;transform:translateX(-50%) scale(.5);transform-origin:50% 0;font-family:'Silkscreen',var(--mono);font-size:8.8px;line-height:1;letter-spacing:.02em;color:#2a1c08;background:linear-gradient(#f3d77f,#c39a3c);border:1px solid #5a4210;padding:2px 4px 1px;white-space:nowrap;box-shadow:0 2px 0 #3d2b0a;pointer-events:none;}
+  .of-plate.vac{background:linear-gradient(#d6dad6,#9ea39e);color:#2b2f2b;border-color:#555;}
+  .of-sign{position:absolute;transform:scale(.5);transform-origin:0 0;font-family:'Silkscreen',var(--mono);font-size:10px;line-height:1;color:#f5c842;background:#3d2614;border:2px solid #c9a14a;padding:3px 7px;white-space:nowrap;pointer-events:none;box-shadow:2px 2px 0 #000;z-index:400;}
+  .of-label{position:absolute;transform:scale(.5);transform-origin:0 0;font-family:'Silkscreen',var(--mono);font-size:8.4px;line-height:1;color:#e8f2d8;background:rgba(13,18,12,.8);padding:3px 6px;white-space:nowrap;pointer-events:none;z-index:400;}
+  .of-live{position:absolute;transform:scale(.5);transform-origin:0 0;font-family:'Silkscreen',var(--mono);font-size:8.4px;line-height:1;color:#fff;background:#c0392b;padding:3px 6px;white-space:nowrap;pointer-events:none;z-index:400;animation:of-blink 1s steps(2) infinite;}
+  .of-live[hidden]{display:none;}
+  .of-wbhit{position:absolute;left:382px;top:4px;width:100px;height:38px;cursor:pointer;z-index:5;}
+  .of-wbhit:hover{outline:1px dashed #f5c842;outline-offset:1px;background:rgba(245,200,66,.08);}
+  .of-wbhit::after{content:'!';position:absolute;right:-3px;top:-3px;width:7px;height:7px;font:700 6px/7px 'Silkscreen',monospace;text-align:center;background:#f5c842;color:#1d3624;animation:of-bounce 1.2s steps(2) infinite;}
+  .of-agent{position:absolute;transform:translate(-50%,-100%);cursor:pointer;}
+  .of-agent .of-sprite{display:block;width:28px;height:auto;position:relative;}
+  .of-agent.walk .of-sprite{animation:of-bob .32s steps(2) infinite;}
+  .of-agent.type .of-sprite{animation:of-bob 1.1s steps(2) infinite;}
+  .of-shadow{position:absolute;left:50%;bottom:-2px;width:18px;height:4px;margin-left:-9px;background:rgba(0,0,0,.28);border-radius:50%;}
+  .of-agent.lifted{visibility:hidden;}
+  .of-agent:hover .of-sprite{filter:brightness(1.2);}
+  .of-tag{position:absolute;left:50%;top:100%;transform:translateX(-50%) scale(.5);transform-origin:50% 0;margin-top:3px;font-family:'Silkscreen',var(--mono);font-size:8.4px;line-height:1;color:#fff;background:rgba(0,0,0,.78);padding:2px 5px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;}
+  .of-agent:hover .of-tag,.of-agent.called .of-tag{opacity:1;}
+  .of-bubble{position:absolute;left:50%;bottom:100%;margin-bottom:2px;transform:translateX(-50%) scale(.5);transform-origin:50% 100%;font-family:'Segoe UI Symbol','Segoe UI','Meiryo','Yu Gothic','Noto Sans JP',sans-serif;font-size:12px;line-height:1.15;color:#111;background:#fff;border:1px solid #111;padding:1px 4px;white-space:nowrap;pointer-events:none;display:none;}
+  .of-bubble::after{content:'';position:absolute;left:50%;top:100%;margin-left:-3px;border:3px solid transparent;border-top-color:#111;}
+  .of-bubble.show{display:block;}
+  .of-bubble.stress{background:#ffe0da;border-color:#a8261b;color:#a8261b;font-weight:700;}
+  .of-bubble.stress::after{border-top-color:#a8261b;}
+  .of-bubble.bored{background:#fff6cf;}
+  .of-bubble.dots{font-family:'Silkscreen',monospace;font-size:9px;animation:of-blink 1.4s steps(2) infinite;}
+  .of-agent.called::before{content:'';position:absolute;left:50%;bottom:-4px;width:30px;height:9px;margin-left:-15px;border:1px solid #f5c842;border-radius:50%;animation:of-ring .6s ease-out infinite;}
+  .of-agent.called .of-sprite{animation:of-jump .4s ease-in-out infinite;}
+  @keyframes of-bob{0%{top:0}100%{top:-1px}}
+  @keyframes of-jump{0%,100%{top:0}50%{top:-5px}}
+  @keyframes of-ring{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.4);opacity:0}}
+  @keyframes of-blink{0%{opacity:1}100%{opacity:.4}}
+  @keyframes of-bounce{0%{transform:translateY(0)}100%{transform:translateY(-1px)}}
+  .of-help{font-family:var(--mono);font-size:10px;color:var(--txt3);text-align:center;margin-top:9px;}
+  .of-legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;}
+  .of-leg{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:7px 10px;cursor:pointer;text-align:left;color:var(--txt);font:inherit;}
+  .of-leg:hover{border-color:var(--green);background:var(--surface2);}
+  .of-leg canvas{width:30px;height:auto;image-rendering:pixelated;flex-shrink:0;}
+  .of-leg-n{font-size:12px;font-weight:600;line-height:1.2;}
+  .of-leg-s{font-family:var(--mono);font-size:9.5px;color:var(--txt2);margin-top:2px;}
+  .of-leg-s.stress{color:var(--red);}
+  .of-leg-s.bored{color:var(--amber);}
+  .of-modal{position:fixed;inset:0;z-index:9999;background:rgba(4,8,4,.72);display:flex;align-items:center;justify-content:center;padding:16px;transition:background .25s;}
+  .of-card{position:relative;background:var(--surface);border:3px solid var(--green);box-shadow:0 0 0 3px #000,10px 10px 0 #000;width:min(600px,94vw);max-height:88vh;overflow:auto;padding:18px 20px 16px;transition:transform .32s cubic-bezier(.2,1.25,.4,1),opacity .25s;}
+  .of-x{position:absolute;right:8px;top:8px;width:28px;height:28px;font:700 14px/1 'Pixelify Sans',var(--mono);background:var(--red);color:#fff;border:2px solid #000;box-shadow:2px 2px 0 #000;cursor:pointer;z-index:2;}
+  .of-ch{display:flex;gap:16px;align-items:center;margin-bottom:12px;padding-right:30px;}
+  .of-av{width:108px;height:auto;image-rendering:pixelated;flex-shrink:0;}
+  .of-avw{padding:10px 6px 14px;background:radial-gradient(ellipse at 50% 88%,rgba(0,0,0,.45) 0 22%,transparent 23%),var(--bg2);border:2px solid var(--border2);}
+  .of-cn{font-family:'Pixelify Sans',var(--mono);font-size:22px;color:var(--txt);line-height:1.1;}
+  .of-cr{font-size:12px;color:var(--txt2);margin-top:4px;line-height:1.4;}
+  .of-mood{display:inline-block;margin-top:8px;font-size:12px;padding:3px 9px;border:1px solid;font-family:'Segoe UI Symbol','Segoe UI','Meiryo',sans-serif;}
+  .of-mood.stress{color:var(--red);border-color:var(--red);background:var(--rdim);}
+  .of-mood.bored{color:var(--amber);border-color:var(--amber);background:var(--adim);}
+  .of-mood.work{color:var(--green);border-color:var(--green);background:var(--gdim);}
+  .of-mood.meet{color:var(--blue);border-color:var(--blue);background:var(--bdim);}
+  .of-mood.chill{color:var(--txt2);border-color:var(--border2);}
+  .of-sec{margin-top:12px;}
+  .of-sec h4{font-family:'Silkscreen',var(--mono);font-size:10px;letter-spacing:.06em;color:var(--amber);margin-bottom:6px;font-weight:400;}
+  .of-task{padding:7px 10px;border:1px solid var(--border);border-left:3px solid var(--border2);background:var(--bg2);margin-bottom:6px;}
+  .of-task.active{border-left-color:var(--green);}
+  .of-task.pending{border-left-color:var(--blue);}
+  .of-task.stalled{border-left-color:var(--amber);}
+  .of-task b{font-size:12px;display:block;line-height:1.35;font-weight:600;}
+  .of-task small{display:block;font-size:11px;color:var(--txt2);margin-top:3px;line-height:1.45;}
+  .of-task .meta{font-family:var(--mono);font-size:9.5px;color:var(--txt3);margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+  .of-st{font-family:var(--mono);font-size:9px;padding:1px 6px;font-weight:700;letter-spacing:.04em;}
+  .of-st.active{background:var(--gdim);color:var(--green);}
+  .of-st.pending{background:var(--bdim);color:var(--blue);}
+  .of-st.stalled{background:var(--adim);color:var(--amber);}
+  .of-chip{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;padding:1px 6px;border:1px solid var(--border2);color:var(--txt2);}
+  .of-chip i{width:7px;height:7px;display:inline-block;}
+  .of-empty{font-size:11px;color:var(--txt3);font-style:italic;}
+  .of-foot{margin-top:14px;padding-top:10px;border-top:1px dashed var(--border2);font-family:var(--mono);font-size:9.5px;color:var(--txt3);word-break:break-word;}
+  .of-wb{position:relative;width:min(780px,95vw);max-height:88vh;overflow:auto;background:#fbfbf6;border:12px solid #b9c0c7;box-shadow:inset 0 0 0 2px #8d949b,0 0 0 3px #000,10px 10px 0 #000;padding:22px 28px 36px;font-family:'Caveat',cursive;color:#1f2a44;transition:transform .32s cubic-bezier(.2,1.25,.4,1),opacity .25s;}
+  .of-wb h3{font-family:'Caveat',cursive;font-weight:700;font-size:30px;line-height:1;margin:4px 0 8px;}
+  .of-wb .red{color:#c0392b;} .of-wb .blue{color:#2251a8;} .of-wb .green{color:#1e8449;}
+  .of-wb ul{list-style:none;margin:0 0 6px;}
+  .of-wb li{font-size:22px;line-height:1.25;padding-left:22px;position:relative;}
+  .of-wb li::before{content:'○';position:absolute;left:0;color:#2251a8;}
+  .of-wb li.done{text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:#c0392b;color:#7a8190;}
+  .of-wb li.done::before{content:'✓';color:#1e8449;font-weight:700;}
+  .of-wb li.open::before{content:'•';color:#c0392b;font-weight:700;}
+  .wb-m{margin:14px 0 6px;padding-top:10px;border-top:2px dashed #cdd2d8;}
+  .wb-mh{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:25px;font-weight:700;}
+  .wb-att{display:flex;gap:5px;margin:6px 0 4px;flex-wrap:wrap;}
+  .wb-att canvas{width:24px;height:auto;image-rendering:pixelated;}
+  .wb-live{font-family:'Silkscreen',monospace;font-size:10px;color:#fff;background:#c0392b;padding:2px 6px;}
+  .wb-tray{height:8px;margin:20px -8px -22px;background:#9aa1a8;border-top:2px solid #c7cdd3;}
+  .of-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  /* letrero LED del Cartel */
+  .of-ticker{display:flex;align-items:stretch;max-width:1280px;margin:0 auto 8px;background:#0b0f0a;border:2px solid #050805;box-shadow:0 0 0 2px var(--dgreen);cursor:pointer;overflow:hidden;}
+  .of-ticker:hover{box-shadow:0 0 0 2px var(--amber);}
+  .of-ticker[hidden]{display:none;}
+  .of-tk-lbl{flex-shrink:0;font-family:'Silkscreen',var(--mono);font-size:11px;color:#1d3624;background:#f5c842;padding:6px 10px;display:flex;align-items:center;white-space:nowrap;}
+  .of-tk-win{flex:1;overflow:hidden;display:flex;align-items:center;min-height:28px;}
+  .of-tk-txt{white-space:nowrap;font-family:'Silkscreen',var(--mono);font-size:12px;color:#f5c842;text-shadow:0 0 6px rgba(245,200,66,.55);padding-left:100%;animation:of-marquee 60s linear infinite;}
+  .of-ticker:hover .of-tk-txt{animation-play-state:paused;}
+  @keyframes of-marquee{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+  /* tablero de corcho (zona clickeable en la escena) + notas de aviso en escritorios */
+  .of-cbhit{position:absolute;left:148px;top:3px;width:56px;height:30px;cursor:pointer;z-index:5;}
+  .of-cbhit:hover{outline:1px dashed #f5c842;outline-offset:1px;background:rgba(245,200,66,.1);}
+  .of-cbhit::after{content:attr(data-n);position:absolute;right:-3px;top:-3px;min-width:7px;height:7px;padding:0 1px;font:700 6px/7px 'Silkscreen',monospace;text-align:center;background:#c0392b;color:#fff;animation:of-bounce 1.2s steps(2) infinite;}
+  .of-note{position:absolute;width:6px;height:6px;background:#fbe26a;box-shadow:1px 1px 0 rgba(0,0,0,.35);pointer-events:none;}
+  .of-note::before{content:'';position:absolute;left:2px;top:-1px;width:2px;height:2px;background:#c0392b;}
+  .of-note::after{content:'';position:absolute;left:1px;top:3px;width:4px;height:1px;background:#b19a3a;}
+  .of-note[hidden]{display:none;}
+  /* pop-up del Cartel */
+  .of-cork{position:relative;width:min(840px,95vw);max-height:88vh;overflow:auto;background:#c8955a;border:12px solid #6b4426;box-shadow:inset 0 0 0 2px #4a2d17,0 0 0 3px #000,10px 10px 0 #000;padding:22px 24px 26px;transition:transform .32s cubic-bezier(.2,1.25,.4,1),opacity .25s;}
+  .of-cork h3{font-family:'Pixelify Sans',var(--mono);font-size:26px;color:#2a1c08;line-height:1.1;}
+  .of-cork .of-cork-sub{font-family:var(--mono);font-size:11px;color:#3d2614;margin:4px 0 16px;}
+  .of-notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;}
+  .of-pin{position:relative;background:#fbf3b5;color:#2a2a1a;padding:16px 13px 11px;box-shadow:2px 3px 0 rgba(0,0,0,.35);font-size:12.5px;line-height:1.45;transform:rotate(-1deg);}
+  .of-pin:nth-child(3n+2){background:#d7ecf8;transform:rotate(.8deg);}
+  .of-pin:nth-child(3n){background:#f9d5df;transform:rotate(-.4deg);}
+  .of-pin::before{content:'';position:absolute;top:-5px;left:50%;width:11px;height:11px;margin-left:-5px;background:#c0392b;border-radius:50%;box-shadow:inset -2px -2px 0 #8e2a20,1px 1px 0 rgba(0,0,0,.3);}
+  .of-pin .who{margin-top:9px;font-family:var(--mono);font-size:9.5px;color:#5a4a2a;display:flex;gap:4px;flex-wrap:wrap;align-items:center;}
+  .of-pin .of-chip{color:#3a3020;border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.45);}
+  .of-task.pin{border-left-color:#f5c842;}
+  .of-task.bc{border-left-color:#5fd3f3;}
+  .of-bc-to{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Pixelify+Sans:wght@400;600&family=Silkscreen&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hd">
+  <div class="hd-left">
+    <div class="logo">KARL SUPPORT SERVICES</div>
+    <div class="badge">OPS DASHBOARD · <b>JULIO 2026</b></div>
+    <div class="badge">Coordinador: <b>Executive Assistant</b></div>
+    <div class="badge">Agentes activos: <b>10</b></div>
+  </div>
+  <div class="hd-right" id="live-dt"></div>
+</div>
+
+<!-- PESTAÑAS -->
+<div class="tabs" role="tablist">
+  <button class="tab on" data-tab="ops" role="tab">📋 Operaciones</button>
+  <button class="tab" data-tab="office" role="tab">🏢 Oficina</button>
+</div>
+
+<div id="tab-ops" class="tabpane">
+<!-- HEALTH -->
+<div class="health-bar amber">
+  <span class="health-label">Estado del Sprint</span>
+  <span class="health-msg">🟢 01/10: Residential Rubbish Removal prácticamente cerrado — 4 blogs publicados, LinkedIn publicado, Lead Research y QA de Marketing Specialist OK, fotos de Design OK. Solo queda Email (5 correos, aún sin enviar). Precio/teléfono/GMB ya aclarados por Alim (precio es por cotización telefónica, teléfono es el mismo de siempre, GMB sigue pausado del lado de KARL). Sigue abierta la auditoría técnica del sitio (58/100) y la decisión del segmento "Oficinas".</span>
+  <span style="margin-left:auto;font-family:var(--mono);font-size:10px;" id="sprint-pct">0% completado</span>
+</div>
+
+<!-- OVERVIEW -->
+<div class="sl">Resumen — Semana del 09 Jul</div>
+<div class="g4 mb">
+  <div class="card">
+    <div class="ct" style="margin-bottom:5px">Tareas activas</div>
+    <div class="kv" style="color:var(--green)">20</div>
+    <div class="kl">En el board de esta semana</div>
+    <div class="kt">Ver <b>Sprint Calendar</b> abajo</div>
+  </div>
+  <div class="card">
+    <div class="ct" style="margin-bottom:5px">Bloqueadas por Alim</div>
+    <div class="kv" style="color:var(--amber)">2</div>
+    <div class="kl">Audiencia/cadencia Mailchimp · revisión de fricción /contact</div>
+    <div class="kt">Ver <b>Esperando Respuesta</b></div>
+  </div>
+  <div class="card">
+    <div class="ct" style="margin-bottom:5px">Bloqueadas por cliente</div>
+    <div class="kv" style="color:var(--amber)">3</div>
+    <div class="kl">KARL / Rosa Martinez</div>
+    <div class="kt">Firma · 4 sends HTML · calendario de julio</div>
+  </div>
+  <div class="card">
+    <div class="ct" style="margin-bottom:5px">De la reunión 02 Jul</div>
+    <div class="kv" style="color:var(--blue)">4</div>
+    <div class="kl">Tareas nuevas asignadas</div>
+    <div class="kt">Ver detalle <b>abajo</b></div>
+  </div>
+</div>
+
+<!-- MEETING FOLLOW-UPS -->
+<div class="sl">Minuta de Reunión — Jueves 02 Jul (Rosa Martinez, Director)</div>
+<div class="card mb">
+  <div class="ch">
+    <span class="ct">Tareas capturadas de la reunión</span>
+    <span class="pill pb">4 ítems · ruteadas</span>
+  </div>
+
+  <div class="mt-item">
+    <div class="mt-num">01</div>
+    <div style="flex:1">
+      <div class="mt-title">Formulario de contacto siempre visible (sticky / hover)</div>
+      <div class="mt-desc">Construido: ribbon vertical en el borde derecho que expande a un panel con el `/contact` embebido (reutiliza el pipeline de leads actual). v3 corrigió un bug de nesting infinito y de contraste que Alim encontró al probar, e instalado en Squarespace vía Code Injection.</div>
+      <div class="mt-meta">→ Web Developer · <b style="color:var(--green)">Instalado — Listo ✅</b></div>
+    </div>
+    <span class="ag-tag t-wd">WEB DEV</span>
+  </div>
+
+  <div class="mt-item">
+    <div class="mt-num">02</div>
+    <div style="flex:1">
+      <div class="mt-title">Landing Page para Paid Media</div>
+      <div class="mt-desc">Publicada y aprobada por el cliente. Logo agrandado con imagen real, secciones reordenadas, confirmación post-envío, widget sticky excluido de esta página, dirección corregida en su footer, bug de mobile (zoom-out + tab duplicado) resuelto y reinstalado (v4) — confirmado en dispositivo real. Campaña de julio ya lanzada sobre esta landing.</div>
+      <div class="mt-meta">→ Web Developer · <b style="color:var(--green)">Publicada y aprobada ✅</b></div>
+    </div>
+    <span class="ag-tag t-wd">WEB DEV</span>
+  </div>
+
+  <div class="mt-item">
+    <div class="mt-num">03</div>
+    <div style="flex:1">
+      <div class="mt-title">Mejora de firma de correo (Rosa Martinez, Director)</div>
+      <div class="mt-desc">Rediseñada según la distribución acordada: nombre, cargo, teléfono, email, certificaciones (logos), redes (Instagram/web/LinkedIn).</div>
+      <div class="mt-meta">→ Email Marketing · <b style="color:var(--amber)">Entregada — esperando feedback de Rosa</b></div>
+    </div>
+    <span class="ag-tag t-em">EMAIL</span>
+  </div>
+
+  <div class="mt-item">
+    <div class="mt-num">04</div>
+    <div style="flex:1">
+      <div class="mt-title">Cadencia de reuniones: invitar desde Google Calendar + minuta siempre</div>
+      <div class="mt-desc">Compromiso operativo de PROTOCOL°: dejar agendada la próxima reunión vía Google Calendar y enviar minuta después de cada reunión con el cliente, sin excepción.</div>
+      <div class="mt-meta">→ Dueño: Executive Assistant / Alim · Ongoing</div>
+    </div>
+    <span class="ag-tag t-ea">EA / OPS</span>
+  </div>
+
+  <div class="mt-item">
+    <div class="mt-num">·</div>
+    <div style="flex:1">
+      <div class="mt-title">Correo de Carter &amp; Spencer Group — recibido, en stand-by</div>
+      <div class="mt-desc">Rosa ya envió el contacto. Va destinado a la sección Pública de Meta Ads, que está bloqueada por la plataforma en este momento — no depende de nosotros ni del cliente.</div>
+      <div class="mt-meta">→ Paid Media · <b style="color:var(--amber)">En stand-by</b> — prioridad máxima apenas Meta lo desbloquee</div>
+    </div>
+    <span class="ag-tag t-pm">PAID</span>
+  </div>
+
+  <div class="mt-item">
+    <div class="mt-num">⚠</div>
+    <div style="flex:1">
+      <div class="mt-title">Corrección: dirección física incorrecta en todo el material</div>
+      <div class="mt-desc">El cliente corrigió la dirección: es <b>9 Henry Street, Thorneside QLD 4158</b>, no "45 Leon Street" como se venía usando. Corregida en sitio en vivo (About Us, Certifications, Footer, Privacy Policy, schema), landing page de Paid Media, mailer de Facility Assessment, briefs de agentes y memoria de la EA.</div>
+      <div class="mt-meta">→ Web Developer + Email Marketing · <b style="color:var(--green)">Resuelto ✅</b></div>
+    </div>
+    <span class="ag-tag t-wd">WEB DEV</span>
+  </div>
+</div>
+
+<!-- SPRINT CALENDAR -->
+<div class="sl">Reunión Cliente — 02 Septiembre 2026 · Marcar tareas completadas</div>
+<div class="mb">
+  <div class="wk now">
+    <div class="wk-hd">
+      <div class="wk-title">MINUTA 02/09 — MULTI-SERVICIO + NUEVO SERVICIO DE ESCOMBROS <span class="pill pb" style="margin-left:6px">ACTIVA</span></div>
+      <div class="wk-dates">Semana del 02 SEP</div>
+    </div>
+    <div class="wk-obj">Objetivo: lanzar el nuevo servicio de Desecho de Escombros, abrir 3 verticales de contacto nuevos, y resolver por qué las tarjetas de presentación no generan contacto. KARL confirmó que ya no es solo food manufacturing — ver regla de marca actualizada en el Coordination Hub.</div>
+    <ul class="task-ul">
+      <li class="ti"><input type="checkbox" class="tc" data-id="m9-1"><span class="tt">Posicionamiento/voz + copy del nuevo servicio de Desecho de Escombros (residencial + comercial)</span><span class="ag-tag t-cb">CONTENT</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="m9-2"><span class="tt">Keyword research + schema para la nueva página de servicio (ref: bigtruckrubbishremoval.com.au)</span><span class="ag-tag t-seo">SEO</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="m9-3"><span class="tt">Construir la página del nuevo servicio — bloqueado por Content + SEO</span><span class="ag-tag t-wd">WEB DEV</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="m9-4"><span class="tt">Anuncio de lanzamiento a la lista actual — bloqueado por copy/voz de Content</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="m9-5"><span class="tt">Lista nueva de Real Estate para promocionar Escombros — KARL envía confirmación la noche del 02/09</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="m9-6"><span class="tt">Post RRSS anunciando el nuevo servicio — bloqueado por copy/voz de Content</span><span class="ag-tag t-li">LINKEDIN</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="m9-7"><span class="tt">GMB: coordinar grabación de "entrada" (video de sitio) — tarea física de Alim/KARL, no de un agente</span><span class="ag-tag t-ea">ALIM</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="m9-8"><span class="tt">Estrategia de contacto por vertical: casas de retiro (limpieza de unidades), concesionarios autos/motos, complejos de oficinas gigantes</span><span class="ag-tag t-lr">RESEARCH</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="m9-9"><span class="tt">Confirmar zonas exactas de Brisbane marcadas por Alim en el mapa (Wynnum/Manly, Tingalpa, Whites Hill, Mount Gravatt/Sunnybank)</span><span class="ag-tag t-ea">ALIM</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="m9-10"><span class="tt">Sourcing de correos para los 3 verticales nuevos (después de la estrategia)</span><span class="ag-tag t-lr">RESEARCH</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="m9-11"><span class="tt">Rediseño de tarjeta de presentación (variaciones de info) — cero contacto con la actual</span><span class="ag-tag t-de">DESIGN</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="m9-12"><span class="tt">Google Sheet de seguimiento de visitas por zona + listado previo de locales</span><span class="ag-tag t-lr">RESEARCH</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="m9-13"><span class="tt">Tarjeta + folleto por servicio (mínimo: limpieza de alimentos + Desecho de Escombros) — copy pendiente de Content</span><span class="ag-tag t-de">DESIGN</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="m9-14"><span class="tt">Definir estructura de rotación mensual de tarjetas/folletos con links distintos</span><span class="ag-tag t-de">DESIGN</span></li>
+    </ul>
+    <div class="wk-ft"><span id="m9c">0/14</span></div>
+  </div>
+</div>
+
+<div class="sl">Plan de Trabajo — Empuje Residential Rubbish Removal (retomado 24 Sept) · Marcar tareas completadas</div>
+<div class="mb">
+  <div class="wk now">
+    <div class="wk-hd">
+      <div class="wk-title">MESA REDONDA 24/09 — CONTENIDO GEOLOCALIZADO PARA RESIDENTIAL RUBBISH REMOVAL <span class="pill pb" style="margin-left:6px">ACTIVA</span></div>
+      <div class="wk-dates">Desde 24 SEP</div>
+    </div>
+    <div class="wk-obj">Objetivo: retomar el servicio de Residential Rubbish Removal tras 3 semanas sin movimiento — 4 blogs geolocalizados, 5 correos de campaña, e investigación de oportunidades de posicionamiento en la zona de servicio (Chermside/Nundah a Sunnybank/Victoria Point). Página ya en vivo desde 09-04; bloqueantes de cotización/precio/teléfono/GMB siguen sin confirmar por Alim.</div>
+    <ul class="task-ul">
+      <li class="ti"><input type="checkbox" class="tc" data-id="rr-1"><span class="tt">Blog 1 — Pilar general: Residential Rubbish Removal en Brisbane</span><span class="ag-tag t-cb">CONTENT</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="rr-2"><span class="tt">Blog 2 — Hiper-local: suburbios cerca de la base real de KARL (Wynnum/Manly/Thorneside)</span><span class="ag-tag t-cb">CONTENT</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="rr-3"><span class="tt">Blog 3 — House clearance / deceased estate clean-outs (tono cuidadoso)</span><span class="ag-tag t-cb">CONTENT</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="rr-4"><span class="tt">Blog 4 — Comparación AEO: Rubbish Removal vs. Skip Bin Hire</span><span class="ag-tag t-cb">CONTENT</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="rr-5"><span class="tt">Pase de keywords + schema + geo + internal linking sobre los 4 blogs</span><span class="ag-tag t-seo">SEO</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="rr-6"><span class="tt">Decidir enfoque de audiencia para la campaña (lista actual vs. esperar a Lead Research)</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="rr-7"><span class="tt">Correo 1/5 — Anuncio del nuevo servicio</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="rr-8"><span class="tt">Correo 2/5 — El problema/dolor de no contratar un servicio profesional</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="rr-9"><span class="tt">Correo 3/5 — Prueba de confiabilidad local (zona de servicio + base en Thorneside)</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="rr-10"><span class="tt">Correo 4/5 — FAQ / manejo de objeciones (sin precios concretos)</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="rr-11"><span class="tt">Correo 5/5 — CTA final / urgencia</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="rr-12"><span class="tt">Investigación de oportunidades de posicionamiento en la zona (competencia, directorios, alianzas locales)</span><span class="ag-tag t-lr">RESEARCH</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="rr-13"><span class="tt">Revisión de calidad de Marketing Specialist sobre los 3 entregables (firewall de marca, sin flota, voz de confiabilidad)</span><span class="ag-tag t-ms">STRATEGY</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="rr-14"><span class="tt">LinkedIn: 4 posts repurposeados, uno por blog, espaciados cada 2 semanas para respetar el tope de 1 en 4 posts</span><span class="ag-tag t-li">LINKEDIN</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="rr-15"><span class="tt">Alim: confirmar estado actual de cotización gratis, disposición de escombro, precio, teléfono medible y GMB</span><span class="ag-tag t-ea">ALIM</span></li>
+    </ul>
+    <div class="wk-ft"><span id="rrc">0/15</span></div>
+  </div>
+</div>
+
+<div class="sl">Sprint Calendar — Julio 2026 · Marcar tareas completadas</div>
+<div class="g4 mb">
+
+  <!-- WEEK 1 -->
+  <div class="wk">
+    <div class="wk-hd">
+      <div class="wk-title">S1 — ARRANQUE <span class="pill pg" style="margin-left:6px">CERRADA</span></div>
+      <div class="wk-dates">02–08 JUL</div>
+    </div>
+    <div class="wk-obj">Objetivo: cerrar las 4 tareas de la reunión con el cliente + destrabar Paid Media y Content con los inputs pendientes. ✅ Semana cerrada 08/07 — solo quedan 2 ítems fuera de nuestro control (firma esperando a Rosa, exports en pausa a propósito).</div>
+    <ul class="task-ul">
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-1"><span class="tt">Construir formulario de contacto sticky/hover (v3)</span><span class="ag-tag t-wd">WEB DEV</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-13"><span class="tt">Instalar widget sticky en Squarespace (Code Injection)</span><span class="ag-tag t-ea">ALIM</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-2"><span class="tt">Landing Page Paid Media — publicada y aprobada por el cliente</span><span class="ag-tag t-wd">WEB DEV</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-20"><span class="tt">Reinstalar widget v4 (fix mobile) y confirmar en dispositivo real</span><span class="ag-tag t-ea">ALIM</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-3"><span class="tt">UTM en URLs de anuncios Meta (bloquea lanzamiento julio)</span><span class="ag-tag t-wd">WEB DEV</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-4"><span class="tt">Meta Pixel instalado + evento Lead en form_submit</span><span class="ag-tag t-wd">WEB DEV</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-5"><span class="tt">Firma de email rediseñada — esperando feedback de Rosa</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-7"><span class="tt">4 blog posts de julio — SEO-cleared, listos para publicar</span><span class="ag-tag t-cb">CONTENT</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-18"><span class="tt">Pase de SEO + schema + internal links sobre los 4 borradores</span><span class="ag-tag t-seo">SEO</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-22"><span class="tt">Publicar los 4 blogs (ojo: Blog 2 con nuevo título/slug) — programados</span><span class="ag-tag t-wd">WEB DEV</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-8"><span class="tt">Keyword map + auditoría de schema en páginas de Web/ — entregado</span><span class="ag-tag t-seo">SEO</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-9"><span class="tt">Reunir exports Meta Ads + Instagram — en pausa a propósito (esperando más días de campaña)</span><span class="ag-tag t-da">DATA</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-10"><span class="tt">Filtro GA4 de exclusión Meta — capa de reporting aplicada y funcionando</span><span class="ag-tag t-da">DATA</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-11"><span class="tt">Proponer cadencia + pilares semanales de LinkedIn — entregado</span><span class="ag-tag t-li">LINKEDIN</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-12"><span class="tt">Agendar próxima reunión en Google Calendar — hecho por Alim</span><span class="ag-tag t-ea">EA</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-15"><span class="tt">Calendario de Email Marketing de julio — firmado por Alim y enviado a Rosa</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-19"><span class="tt">HTML completo de los 4 envíos — enviado a Rosa, esperando feedback</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-16"><span class="tt">Corregir dirección — texto visible en sitio/landing (9 Henry St)</span><span class="ag-tag t-wd">WEB DEV</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-17"><span class="tt">Corregir dirección en el mailer de Facility Assessment (9 Henry St)</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-21"><span class="tt">Fotos Semana 3 y 4 — decidido: sin imagen en estos 2 envíos</span><span class="ag-tag t-ea">ALIM</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-23"><span class="tt">Subir dirección corregida al schema (About Us + Certifications) — verificado con Rich Results Test</span><span class="ag-tag t-ea">ALIM</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w1-24"><span class="tt">Nuevo título + meta de /faqs — confirmado en vivo</span><span class="ag-tag t-wd">WEB DEV</span></li>
+    </ul>
+    <div class="wk-ft"><span id="w1c">0/22</span></div>
+  </div>
+
+  <!-- WEEK 2 -->
+  <div class="wk now">
+    <div class="wk-hd">
+      <div class="wk-title">S2 — CONTENIDO + LANZAMIENTO <span class="pill pb" style="margin-left:6px">ACTIVA</span></div>
+      <div class="wk-dates">09–15 JUL</div>
+    </div>
+    <div class="wk-obj">Objetivo: primer blog publicado con pase SEO · campaña de julio en vivo con tracking correcto · reactivación de email agendada.</div>
+    <ul class="task-ul">
+      <li class="ti"><input type="checkbox" class="tc" data-id="w2-1"><span class="tt">Publicar Blog 1 (Audit-Ready) + enviar Email Semana 1 (08/07) — hecho</span><span class="ag-tag t-cb">CONTENT</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w2-2"><span class="tt">Publicar Blog 2 (retitulado) + enviar Email Semana 2 (15/07) — programado</span><span class="ag-tag t-cb">CONTENT</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w2-3"><span class="tt">Refrescar la versión en vivo del post de auditoría (pos. 32.7) — publicado, URL duplicada resuelta</span><span class="ag-tag t-cb">CONTENT</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w2-4"><span class="tt">Lanzar campaña de julio ($60, objetivo Leads/form_submit) — en vivo (adelantada desde S1)</span><span class="ag-tag t-pm">PAID</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w2-5"><span class="tt">Envío de reactivación de email — Semana 1 enviada, Semana 2 programada</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w2-6"><span class="tt">Revisión de fricción en landing /contact — publicada y en vivo en campañas de Paid Media</span><span class="ag-tag t-ea">ALIM</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w2-7"><span class="tt">Calendario LinkedIn de julio — 12 posts (4 semanas) con caption + foto, listo</span><span class="ag-tag t-li">LINKEDIN</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w2-8"><span class="tt">Email dedicado: anuncio Blog 1 (Audit-Ready) — enviado</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w2-9"><span class="tt">Email dedicado: anuncio Blog 2 (Food Manufacturing Cleaning Services) — enviado esta semana</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w2-10"><span class="tt">Consolidar las 3 URLs duplicadas de industrial-office-cleaning — hecho, redirects corregidos</span><span class="ag-tag t-wd">WEB DEV</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w2-11"><span class="tt">Filtro GA4 verificado y pasado a Active — sin falsos positivos</span><span class="ag-tag t-ea">ALIM</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w2-12"><span class="tt">Auditoría de la BBDD actual (118 contactos) — hecha: solo ~16 son ICP correcto</span><span class="ag-tag t-lr">RESEARCH</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w2-13"><span class="tt">Decisión de Alim: ¿qué hacer con el segmento "KARL | Oficinas" (55% de la lista)?</span><span class="ag-tag t-ea">ALIM</span></li>
+    </ul>
+    <div class="wk-ft"><span id="w2c">0/13</span></div>
+  </div>
+
+  <!-- WEEK 3 -->
+  <div class="wk">
+    <div class="wk-hd">
+      <div class="wk-title">S3 — OPTIMIZACIÓN</div>
+      <div class="wk-dates">16–22 JUL</div>
+    </div>
+    <div class="wk-obj">Objetivo: primera lectura de rendimiento de campaña y del segundo envío de email; ajustar sobre datos reales.</div>
+    <ul class="task-ul">
+      <li class="ti"><input type="checkbox" class="tc" data-id="w3-1"><span class="tt">Chequeo intermedio de campaña Meta (CPR, form_submit real)</span><span class="ag-tag t-pm">PAID</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w3-2"><span class="tt">Publicar Blog 3 (HACCP Provider) + enviar Email Semana 3 (22/07)</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w3-3"><span class="tt">Distribuir Blog 3 en LinkedIn</span><span class="ag-tag t-cb">CONTENT</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w3-4"><span class="tt">Pulso de indexación/CWV en páginas publicadas</span><span class="ag-tag t-seo">SEO</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w3-5"><span class="tt">Email dedicado: anuncio Blog 3 (HACCP Provider) — HTML listo, falta programar</span><span class="ag-tag t-em">EMAIL</span></li>
+    </ul>
+    <div class="wk-ft"><span id="w3c">0/5</span></div>
+  </div>
+
+  <!-- WEEK 4 -->
+  <div class="wk">
+    <div class="wk-hd">
+      <div class="wk-title">S4 — CIERRE DE MES</div>
+      <div class="wk-dates">23–31 JUL</div>
+    </div>
+    <div class="wk-obj">Objetivo: reporte mensual de julio listo · top-3 insights alimentan prioridades de agosto para todos los agentes.</div>
+    <ul class="task-ul">
+      <li class="ti"><input type="checkbox" class="tc" data-id="w4-5"><span class="tt">Publicar Blog 4 (Refresh Audit Prep) + enviar Email Semana 4 (29/07)</span><span class="ag-tag t-em">EMAIL</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w4-1"><span class="tt">Consolidar exports de julio (Meta Ads + Instagram)</span><span class="ag-tag t-da">DATA</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w4-2"><span class="tt">Reporte mensual de julio 2026</span><span class="ag-tag t-da">DATA</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w4-3"><span class="tt">Top-3 insights → briefing de agosto para Content/SEO/Paid/LinkedIn</span><span class="ag-tag t-da">DATA</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w4-4"><span class="tt">Sprint Review con Alim + cierre de minuta del mes</span><span class="ag-tag t-ea">EA</span></li>
+      <li class="ti"><input type="checkbox" class="tc" data-id="w4-6"><span class="tt">Email dedicado: anuncio Blog 4 (Audit Prep Refresh) — HTML listo, falta programar</span><span class="ag-tag t-em">EMAIL</span></li>
+    </ul>
+    <div class="wk-ft"><span id="w4c">0/6</span></div>
+  </div>
+
+</div>
+
+<!-- BOTTOM ROW -->
+<div class="g3 mb">
+
+  <!-- CHOKEHOLDS -->
+  <div class="card">
+    <div class="ch">
+      <span class="ct">Chokeholds</span>
+      <span class="pill pa">5 activos · 9 resueltos · 3 reglas permanentes</span>
+    </div>
+    <div class="ch-item">
+      <div class="dot g"></div>
+      <div>
+        <div class="ch-title">🟢 RESUELTO — Placeholder del FAQ + canonical mal apuntado en Residential Rubbish Removal</div>
+        <div class="ch-desc">Alim corrigió el FAQ directamente y el link de la canonical a <code>/residential-rubbish-removal-brisbane/</code>. Está corrigiendo ahora los links internos de los 4 blogs hacia la URL real. El "24-Hour Guarantee" queda confirmado por Alim — ya no es un pendiente, es la decisión final.</div>
+        <div class="ch-who">→ Cerrado por Alim 10-01</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot r"></div>
+      <div>
+        <div class="ch-title">🔴 CORRECCIÓN DE MARCA: "The data decides, we execute" NO es de KARL — es el lema de PROTOCOLo</div>
+        <div class="ch-desc">Alim detectó que esta frase (y su versión en español "La data decide, PROTOCOLo ejecuta") venía mal atribuida a KARL como si fuera su tagline — es el lema de la propia agencia PROTOCOLo. Se propagó desde el archivo de marca maestro (`Grilla de Contenido/For Claude Design.txt`) hacia 5 archivos más: el doc de contexto de la EA, el brief de Data Analysis Expert, <strong>3 headlines en vivo del copy de Ads de julio de Paid Media</strong>, y los dos documentos de posicionamiento de Rubbish Removal (Marketing Specialist + Content). Los 6 archivos ya fueron corregidos hoy y se agregó como regla de marca permanente en el Coordination Hub. Mensaje de corrección enviado a los 10 agentes. <strong>Pendiente:</strong> Paid Media debe confirmar si esos anuncios siguen activos en Meta Ads Manager y corregir el rotativo real de headlines (el archivo corregido no corrige lo que ya está publicado); Marketing Specialist debe revisar si el mismo texto aparece en su deck de 19 láminas (no se pudo escanear el binario esta sesión).</div>
+        <div class="ch-who">→ Paid Media Specialist · Marketing Specialist · todos los agentes (aviso)</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot r"></div>
+      <div>
+        <div class="ch-title">🔴 KARL multi-servicio: nuevo servicio de Escombros + 3 verticales nuevos (reunión 09-02)</div>
+        <div class="ch-desc">Alim confirmó que KARL ya no es solo food manufacturing: ahora también limpieza de oficinas, Residential/Commercial Rubbish Removal, y un nuevo enfoque de limpieza residencial para verticales específicos (casas de retiro, concesionarios, complejos de oficinas gigantes). Se actualizó la regla de marca permanente en este documento. Nuevo agente de <strong>Diseño</strong> creado para tarjetas/folletos (antes "pendiente" en el roster). Tareas repartidas hoy: Content & Blog Writer (copy + voz del nuevo servicio), SEO/AEO/GEO (keywords + schema), Web Developer (página nueva), Email Marketing + LinkedIn (anuncio de lanzamiento), Lead Research Agent (estrategia + sourcing de los 3 verticales + lista de Real Estate + sheet de seguimiento de visitas), Design (tarjetas/folletos, ahora mensual y recurrente).</div>
+        <div class="ch-who">→ Content · SEO/AEO/GEO · Web Developer · Email Marketing · LinkedIn · Lead Research · Design</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot r"></div>
+      <div>
+        <div class="ch-title">🔴 Auditoría técnica del sitio — score 58/100, 2 críticos bloqueando conversión</div>
+        <div class="ch-desc">Alim entregó una auditoría técnica/UX/SEO completa del sitio en vivo (`SEO - AEO - GEO Specialist/Special Project/`). 2 hallazgos críticos: (1) hero del homepage con texto blanco sobre fondo verde pálido (1.22:1, se requiere 4.5:1) — el mensaje principal es casi ilegible; (2) botón CTA "Request Free Site Assessment" invisible (blanco sobre blanco, 1.0:1) en 3 páginas de servicio + /faqs en mobile — bloquea la conversión principal. Más 9 hallazgos "high": robots.txt bloquea todos los crawlers de IA (GPTBot, ClaudeBot, etc.), falta schema FAQPage/Organization/Service, imágenes hero de 6.2MB sin comprimir. Repartido hoy: SEO/AEO/GEO Specialist lidera el análisis de los hallazgos de su disciplina (schema, robots.txt, encabezados), Web Developer implementa los fixes técnicos (~1.5-2 días de dev estimados).</div>
+        <div class="ch-who">→ SEO/AEO/GEO Specialist · Web Developer</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot y"></div>
+      <div>
+        <div class="ch-title">🟡 Hallazgos del reporte de Julio distribuidos — atrasados, agosto urgente</div>
+        <div class="ch-desc">El reporte mensual de Julio (entregado por Data Analysis Expert el 07-31) no se había repartido a los agentes correspondientes. Hoy 08-19, con ~12 días de agosto restantes, se asignaron 4 tareas puntuales: <strong>SEO</strong> (impresiones -11%, clics casi en cero — revisar meta titles/descriptions), <strong>LinkedIn</strong> (repetir el formato del post del 17/07 que generó ~83% de engagement), <strong>Email Marketing</strong> (el engagement se concentra en los mismos ~15-20 contactos, confirma el hallazgo de la BBDD — repetir el formato "30-Day Audit Prep"), <strong>Content & Blog Writer</strong> (mismo problema de CTR en páginas SEO + repetir el ángulo "30-Day Audit Prep"). Los 4 agentes tienen la tarea asignada, esperando sus entregas.</div>
+        <div class="ch-who">→ SEO · LinkedIn · Email Marketing · Content & Blog Writer</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot g"></div>
+      <div>
+        <div class="ch-title">✅ Refresh del post de auditoría (32.7) — publicado y cerrado</div>
+        <div class="ch-desc">Copy aprobado por SEO el 07-14 (sin lenguaje de garantía, estadísticas sin números inventados). Web Developer confirmó el 07-16 que el contenido ya estaba en vivo en la URL canónica y cerró el último pendiente técnico: redirect 301 de la URL "-1" duplicada (que se estaba llevando ~10% del tráfico) hacia la canónica, verificado en vivo. Alim confirmó que esta versión ("Live Refresh") reemplaza al draft "21-07" — ese draft queda superseded/archivado.</div>
+        <div class="ch-who">→ Web Developer · Resuelto 07/16</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot g"></div>
+      <div>
+        <div class="ch-title">✅ Fix permanente de GA4 (exclusión de IP de Meta) — verificado y en Active</div>
+        <div class="ch-desc">Web Developer verificó vía la dimensión "Test data filter name" que las reglas realmente están capturando tráfico: Luleå confirmado etiquetado "Internal Traffic"; Prineville/Boardman/Forest City sin sesiones en la ventana de prueba (no es una falla, simplemente no hubo tráfico aún); ninguna ciudad de clientes reales quedó etiquetada — cero falsos positivos. Alim confirmó avanzar y el filtro ya está en <b>Active</b>, verificado en la UI de GA4.</div>
+        <div class="ch-who">→ Web Developer · Resuelto 07/14</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot g"></div>
+      <div>
+        <div class="ch-title">✅ Dirección física — texto visible + schema, ambos corregidos</div>
+        <div class="ch-desc">La confirmación de Alim del 07-06 cubría solo el texto visible. La auditoría de SEO/AEO/GEO (07-08) encontró que la dirección vieja seguía "hard-coded" en el schema <b>LocalBusiness</b> (JSON-LD) de About Us y Certifications. SEO corrigió los archivos fuente y Alim subió el código vía Code Injection en Squarespace — verificado en vivo con Google Rich Results Test. Cerrado por completo.</div>
+        <div class="ch-who">→ Alim · Resuelto 07/08</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot g"></div>
+      <div>
+        <div class="ch-title">✅ Página industrial-office-cleaning — 3 URLs consolidadas</div>
+        <div class="ch-desc">Hallazgo de la auditoría de SEO (07-08): la misma página vivía en 3 URLs separadas, dividiendo la señal de ranking. El primer intento de Alim con URL Mapping tenía 2 bugs (redirect apuntando mal + sintaxis inválida en la segunda línea); Web Developer los detectó, dio el mapping corregido y Alim lo aplicó.</div>
+        <div class="ch-who">→ Web Developer · Resuelto 07/14</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot g"></div>
+      <div>
+        <div class="ch-title">✅ Falsa alarma cerrada: hallazgos del footer no aplicaban en vivo</div>
+        <div class="ch-desc">La auditoría original de SEO revisó `Web/KARL - Footer.html`, un archivo local nunca publicado. Al chequear el sitio en vivo directamente: dirección correcta, sin links rotos, sin placeholder de ABN, footer real es una franja simple de Ubicación/Certificaciones/Contacto. Sin acción pendiente.</div>
+        <div class="ch-who">→ SEO/AEO/GEO · Cerrado 07/08, no era un problema real</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot g"></div>
+      <div>
+        <div class="ch-title">✅ Bug de mobile en landing + widget — corregido y confirmado</div>
+        <div class="ch-desc">La página se veía con zoom-out y el tab del widget aparecía duplicado en mobile. Root cause arreglado (v4, con límites de ancho), reinstalado por Alim y confirmado en dispositivo real.</div>
+        <div class="ch-who">→ Web Developer · Resuelto 07/06</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot a"></div>
+      <div>
+        <div class="ch-title">Carter &amp; Spencer Group — en stand-by, bloqueado por Meta</div>
+        <div class="ch-desc">El cliente ya envió el contacto, pero va a la sección Pública de Meta Ads, actualmente bloqueada por la plataforma. No depende de nosotros ni de Rosa.</div>
+        <div class="ch-who">→ Paid Media · Prioridad máxima en cuanto Meta desbloquee</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot g"></div>
+      <div>
+        <div class="ch-title">✅ Atribución paga en GA4 — UTMs entregados</div>
+        <div class="ch-desc">UTM set de julio confirmado por Alim. Meta Pixel también quedó instalado (Pixel ID real 1581116626913901) con el evento Lead ya cableado al botón por Alim. Conversions API queda fuera de alcance por ahora, no es bloqueante.</div>
+        <div class="ch-who">→ Web Developer · Resuelto 02/07</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot g"></div>
+      <div>
+        <div class="ch-title">✅ Landing /contact — revisión de fricción publicada y en vivo</div>
+        <div class="ch-desc">Origen: hallazgo de la auditoría de junio de Paid Media (248 sesiones / 0 conversiones, 473 page views vs. 2 form_starts sitewide). Alim hizo la revisión personalmente (formulario + CTA móvil) y ya está publicada y en vivo en las campañas de Paid Media.</div>
+        <div class="ch-who">→ Alim · Resuelto 07/09</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot b"></div>
+      <div>
+        <div class="ch-title">🔒 Regla permanente: dirección física en footers de email</div>
+        <div class="ch-desc">No es una tarea de una sola vez — Alim la confirmó como QA obligatorio en todo envío/plantilla futuro hasta nuevo aviso. Ya está escrita en el brief de Email Marketing (Sección 3).</div>
+        <div class="ch-who">→ Email Marketing · Standing rule desde 02/07</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot b"></div>
+      <div>
+        <div class="ch-title">🔒 Regla permanente: 8 campañas de email/mes + doc de copy</div>
+        <div class="ch-desc">Confirmado por Alim 07-07: cada mes, 4 sends educativos/promocionales (CTA → /contact) + 4 sends de impulso de blog (CTA → el post), uno de cada tipo por post semanal. Además, cada tanda de HTML se acompaña de un doc de texto plano con el copy de cada envío (ver `Email Marketing/03 - July 2026 Email Copy - All Campaigns.md`). Ya escrito en el brief de Email Marketing (Sección 3).</div>
+        <div class="ch-who">→ Email Marketing · Standing rule desde 07/07</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot g"></div>
+      <div>
+        <div class="ch-title">Diseñador de Marca — aún no creado</div>
+        <div class="ch-desc">LinkedIn, Paid Media y Email dependen de assets visuales on-brand y todavía no hay agente de diseño. Crear cuando el primer agente lo necesite en firme.</div>
+        <div class="ch-who">→ Executive Assistant · Spin up on demand</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WAITING ON -->
+  <div class="card">
+    <div class="ch">
+      <span class="ct">Esperando respuesta</span>
+      <span class="pill pa">3 de Alim · 3 de cliente</span>
+    </div>
+    <div class="ch-item">
+      <div class="dot b"></div>
+      <div>
+        <div class="ch-title">Qué hacer con el segmento "KARL | Oficinas" de la BBDD (55% de la lista)</div>
+        <div class="ch-desc">Auditoría de Lead Research Agent encontró que 65 de 118 contactos son de agencias de reclutamiento, estudios legales, consultoras — no fabricantes de alimentos. Parece una lista armada para otro servicio (oficinas), que choca con la regla de marca de no ofrecer limpieza general de oficinas. Necesitamos tu decisión antes de definir el primer batch de sourcing nuevo.</div>
+        <div class="ch-who">→ Alim</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot b"></div>
+      <div>
+        <div class="ch-title">Confirmación del calendario de LinkedIn de julio</div>
+        <div class="ch-desc">12 posts (4 semanas) con caption y foto sugerida listos. Falta el visto bueno de Alim antes de programar, y coordinar con Design una carpeta "Aprobadas para LinkedIn" con las mejores fotos en alta resolución.</div>
+        <div class="ch-who">→ Alim</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot b"></div>
+      <div>
+        <div class="ch-title">Tamaño/segmentos de audiencia Mailchimp + cadencia</div>
+        <div class="ch-desc">Email Marketing pidió el tamaño actual de audiencia, por qué el conteo de destinatarios viene bajando (145→96), y sign-off para pasar a 1 envío cada 1–2 semanas.</div>
+        <div class="ch-who">→ Alim</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot a"></div>
+      <div>
+        <div class="ch-title">Feedback sobre la firma de email rediseñada</div>
+        <div class="ch-desc">Entregada por Email Marketing. Falta el visto bueno de Rosa antes de darla por cerrada.</div>
+        <div class="ch-who">→ KARL / Rosa Martinez</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot a"></div>
+      <div>
+        <div class="ch-title">Feedback sobre los 4 HTML de envíos de julio</div>
+        <div class="ch-desc">Enviados a Rosa para revisión. Esperando su visto bueno antes de programar en Mailchimp.</div>
+        <div class="ch-who">→ KARL / Rosa Martinez</div>
+      </div>
+    </div>
+    <div class="ch-item">
+      <div class="dot a"></div>
+      <div>
+        <div class="ch-title">Feedback sobre el calendario de Email Marketing de julio</div>
+        <div class="ch-desc">Firmado por Alim y enviado a Rosa. Esperando su respuesta.</div>
+        <div class="ch-who">→ KARL / Rosa Martinez</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGENT STATUS -->
+  <div class="card">
+    <div class="ch">
+      <span class="ct">Estado de Agentes</span>
+      <span class="pill pg">8 activos</span>
+    </div>
+    <div class="ag-row"><div class="ag-ind" style="background:var(--blue)"></div><div style="flex:1"><div class="ag-name">Data Analysis Expert</div><div class="ag-task">Filtro GA4 verificado y en Active (sin falsos positivos) · exports Meta/IG en pausa a propósito hasta más días de campaña</div></div><span class="pill pb">En progreso</span></div>
+    <div class="ag-row"><div class="ag-ind" style="background:var(--amber)"></div><div style="flex:1"><div class="ag-name">Content &amp; Blog Writer</div><div class="ag-task">4 posts SEO-cleared · Blog 2 retitulado por SEO · refresh del post de auditoría publicado y cerrado · NUEVO 09-02: posicionamiento/copy del servicio de Desecho de Escombros + copy de tarjetas/folletos (bloqueando a Design, SEO, Web Dev, Email, LinkedIn)</div></div><span class="pill pa">Nueva tarea urgente</span></div>
+    <div class="ag-row"><div class="ag-ind" style="background:var(--green)"></div><div style="flex:1"><div class="ag-name">SEO / AEO / GEO Specialist</div><div class="ag-task">Auditoría completa del sitio entregada (07-08): dirección en schema subida y verificada ✅, /faqs corregido y en vivo, footer resultó falsa alarma, nueva URL-duplicada detectada · inventario de contenido embebido en la auditoría</div></div><span class="pill pg">Entregado</span></div>
+    <div class="ag-row"><div class="ag-ind" style="background:var(--green)"></div><div style="flex:1"><div class="ag-name">Web Developer</div><div class="ag-task">Landing publicada y aprobada · UTMs/Pixel/widget ✅ · dirección corregida en todo el sitio + schema + mailer · filtro GA4 verificado y en Active · 3 URLs de industrial-office-cleaning consolidadas</div></div><span class="pill pg">Entregado</span></div>
+    <div class="ag-row"><div class="ag-ind" style="background:var(--amber)"></div><div style="flex:1"><div class="ag-name">Email Marketing</div><div class="ag-task">8 campañas de julio en marcha (Semana 1-2 enviadas/programadas) · investigación de contactos movida al nuevo Lead Research Agent · falta sign-off audiencia/cadencia</div></div><span class="pill pa">Esperando cliente</span></div>
+    <div class="ag-row"><div class="ag-ind" style="background:var(--blue)"></div><div style="flex:1"><div class="ag-name">LinkedIn Marketing</div><div class="ag-task">Calendario de julio entregado: cadencia 3x/semana (compliance/BTS/client outcomes), 12 posts con caption + foto sugerida · falta confirmación de Alim y coordinar con Design (carpeta de fotos aprobadas)</div></div><span class="pill pb">Draft ready</span></div>
+    <div class="ag-row"><div class="ag-ind" style="background:var(--green)"></div><div style="flex:1"><div class="ag-name">Paid Media Specialist</div><div class="ag-task">Campaña de julio en vivo ($60, Leads/form_submit) · revisión de fricción /contact publicada y en vivo · Carter &amp; Spencer en stand-by por Meta</div></div><span class="pill pg">En vivo</span></div>
+    <div class="ag-row"><div class="ag-ind" style="background:var(--amber)"></div><div style="flex:1"><div class="ag-name">Lead Research Agent <span style="font-size:8px;color:var(--txt3)">· NUEVO</span></div><div class="ag-task">Auditoría de BBDD entregada: solo ~16 de 118 contactos son ICP correcto y usable hoy · esperando decisión de Alim sobre el segmento "Oficinas" (55%) · NUEVO 09-02: asignada estrategia + sourcing de 3 verticales nuevos + lista Real Estate + sheet de seguimiento de visitas</div></div><span class="pill pa">Esperando a Alim</span></div>
+    <div class="ag-row"><div class="ag-ind" style="background:var(--amber)"></div><div style="flex:1"><div class="ag-name">Design <span style="font-size:8px;color:var(--txt3)">· NUEVO</span></div><div class="ag-task">Agente creado 09-02 (antes "pendiente" en el roster) · primera tarea: tarjetas + folletos por servicio, empezando por limpieza de alimentos y el nuevo servicio de Desecho de Escombros · esperando copy de Content &amp; Blog Writer</div></div><span class="pill pa">Esperando copy</span></div>
+    <div class="ag-row"><div class="ag-ind" style="background:var(--amber)"></div><div style="flex:1"><div class="ag-name">Marketing Specialist <span style="font-size:8px;color:var(--txt3)">· NUEVO</span></div><div class="ag-task">Agente creado 09-02, a pedido de Alim · rol de estrategia/posicionamiento/voz de marca sobre todos los servicios · reporta solo a la EA, no coordina directo con otros agentes · primera tarea: liderar el posicionamiento del lanzamiento de Desecho de Escombros antes de que Content finalice el copy</div></div><span class="pill pa">En progreso</span></div>
+  </div>
+
+</div>
+
+<div class="footer" id="footer-ts"></div>
+</div><!-- /tab-ops -->
+
+<!-- ============================ OFICINA ============================ -->
+<div id="tab-office" class="tabpane" hidden>
+  <div class="of-hud">
+    <div>
+      <div class="of-title">🏢 Oficina de Agentes · KARL</div>
+      <div class="of-sub" id="of-sub"></div>
+    </div>
+    <div class="of-stats" id="of-stats"></div>
+    <div class="of-actions">
+      <button class="of-btn" id="of-cartel" type="button">📌 Cartel</button>
+      <button class="of-btn" id="of-avisos" type="button">📣 Avisos</button>
+      <button class="of-btn" id="of-demo" type="button">▶ Modo demo</button>
+    </div>
+  </div>
+  <div class="of-banner" id="of-banner" hidden></div>
+  <div class="of-ticker" id="of-ticker" title="El Cartel: lo que todos deben tener presente (click para verlo)">
+    <span class="of-tk-lbl">📌 PRESENTE</span>
+    <div class="of-tk-win"><div class="of-tk-txt" id="of-tk-txt"></div></div>
+  </div>
+  <div class="of-wrap" id="of-wrap">
+    <div class="of-stage" id="of-stage">
+      <canvas id="of-bg" width="512" height="336"></canvas>
+    </div>
+  </div>
+  <div class="of-help">Click en un agente para ver en qué está · click en la pizarra de la Sala de Juntas para ver los temas · los agentes sin tareas en curso caminan por la oficina o se juntan en el water cooler.</div>
+  <div class="sl" style="margin-top:16px">Leyenda — click para llamar al agente</div>
+  <div class="of-legend" id="of-legend"></div>
+</div>
+
+<script>
+  function updateHeader(){
+    const now = new Date();
+    document.getElementById('live-dt').textContent = now.toLocaleDateString('es-AU', {weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  }
+  updateHeader();
+  setInterval(updateHeader, 30000);
+
+  document.getElementById('footer-ts').textContent =
+    'Executive Assistant · KARL OPS Dashboard v1.0 · ' + new Date().toLocaleDateString('es-AU', {day:'numeric',month:'short',year:'numeric'});
+
+  const TASK_KEY = 'karl_tasks';
+
+  // Baked-in state — reflects what the EA has verified as delivered as of 2026-07-02.
+  // Local checkbox clicks (via localStorage) override this, but new devices/browsers
+  // always start from this verified baseline instead of from zero.
+  const DEFAULT_STATE = {
+    'w1-3':  true,  // UTMs julio — confirmado OK por Alim
+    'w1-4':  true,  // Meta Pixel instalado + evento Lead cableado por Alim
+    'w1-13': true,  // Widget sticky instalado en Squarespace — confirmado por Alim
+    'w1-18': true,  // Pase de SEO sobre los 4 blogs — completado 07-06
+    'w1-8':  true,  // Keyword map + auditoría de schema — entregado 07-08 (ver "01 - Keyword Map and Schema Audit - July 2026.md")
+    'w1-10': true,  // Filtro GA4 (capa de reporting) aplicado por Alim y confirmado funcionando por Data Analysis Expert 07-08
+    'w1-11': true,  // Cadencia + pilares semanales de LinkedIn — entregado 07-08
+    'w2-7':  true,  // Calendario LinkedIn de julio (12 posts, caption+foto) — entregado 07-08, pendiente confirmación de Alim antes de publicar
+    'w1-12': true,  // Próxima reunión agendada en Google Calendar por Alim
+    'w1-22': true,  // Publicación de los 4 blogs — programada (Blog 2 con nuevo título/slug)
+    'w1-23': true,  // Dirección en schema (About Us + Certifications) — subida y verificada por Alim con Rich Results Test
+    'w1-2':  true,  // Landing Page Paid Media — publicada y aprobada por el cliente
+    'w1-20': true,  // Widget v4 reinstalado y confirmado en dispositivo real
+    'w1-19': true,  // HTML de los 4 envíos — enviado a Rosa (esperando feedback, ver Esperando Respuesta)
+    'w1-15': true,  // Calendario Email Marketing julio — firmado por Alim y enviado a Rosa
+    'w1-16': true,  // Dirección corregida en sitio/landing/schema — confirmado 07-06
+    'w1-17': true,  // Dirección corregida en el mailer — confirmado por Alim (revisión personal) 07-06
+    'w1-21': true,  // Fotos Semana 3-4 — resuelto: sin imagen en esos 2 envíos
+    'w1-24': true,  // Título + meta de /faqs reescritos por SEO — confirmado en vivo por Alim 07-08
+    'w2-4':  true,  // Campaña de julio lanzada — adelantada desde Semana 1
+    'w1-1':  true,  // Formulario de contacto sticky/hover (v3) — instalado y confirmado por Alim (minuta 02/07)
+    'w1-7':  true,  // 4 blog posts de julio — SEO-cleared (ver w1-18) y ya programados (ver w1-22)
+    'w2-1':  true,  // Blog 1 publicado + Email Semana 1 enviado — confirmado por Alim 07-09
+    'w2-2':  true,  // Blog 2 (retitulado) + Email Semana 2 — programados
+    'w2-5':  true,  // Reactivación de email — Semana 1 enviada, Semana 2 programada
+    'w2-6':  true,  // Revisión de fricción /contact — publicada y en vivo en campañas de Paid Media
+    'w2-8':  true,  // Email anuncio Blog 1 — enviado
+    'w2-9':  true,  // Email anuncio Blog 2 — enviado
+    'w2-10': true,  // 3 URLs duplicadas de industrial-office-cleaning — consolidadas por Web Developer 07-14
+    'w2-11': true,  // Filtro GA4 — verificado (sin falsos positivos) y pasado a Active por Web Developer 07-14
+    'w2-12': true,  // Auditoría de la BBDD (118 contactos) — entregada por Lead Research Agent 07-17
+    'w2-3':  true,  // Refresh del post de auditoría — publicado en vivo, URL "-1" redirigida, versión confirmada como canónica por Alim 07-16
+    'rr-1':  true,  // Blog 1 (Pilar general) — publicado, confirmado por Alim 10-01
+    'rr-2':  true,  // Blog 2 (Hiper-local) — publicado, confirmado por Alim 10-01
+    'rr-3':  true,  // Blog 3 (Deceased estate / house clearance) — publicado, confirmado por Alim 10-01
+    'rr-4':  true,  // Blog 4 (Rubbish Removal vs. Skip Bin) — publicado, confirmado por Alim 10-01
+    'rr-5':  true,  // Pase de SEO/schema/geo/internal linking sobre los 4 blogs — completado (blogs ya en vivo)
+    'rr-12': true,  // Investigación de posicionamiento de Lead Research — confirmado OK por Alim 10-01
+    'rr-13': true,  // QA de Marketing Specialist sobre los 3 entregables — confirmado OK por Alim 10-01
+    'rr-15': true,  // Alim confirmó 10-01: precio es por cotización telefónica (no se publica cifra), teléfono es el mismo de la web (no habrá uno medible dedicado), GMB sigue pausado del lado de KARL. Disposición de escombro y "cotización gratis" explícita quedan sin confirmar pero no bloquean nada hoy (el copy ya evita ambos temas).
+    'rr-14': true,  // LinkedIn: 4 posts repurposeados (uno por blog) — PUBLICADOS, confirmado por Alim 10-01. Fotos reales de Design también confirmadas OK.
+    // NOTA: w1-16 (dirección en sitio/landing/schema) quedó marcada 'true' el 07-06 por el texto
+    // visible, pero la auditoría de SEO del 07-08 encontró que el schema LocalBusiness seguía con
+    // la dirección vieja. Ver w1-23 (nueva tarea) y el chokehold reabierto — no se desmarca w1-16
+    // para no perder el trabajo de texto visible ya confirmado, pero el pendiente real vive en w1-23.
+  };
+
+  function loadTasks(){
+    try {
+      const saved = JSON.parse(localStorage.getItem(TASK_KEY));
+      if (!saved) return { ...DEFAULT_STATE };
+      return { ...DEFAULT_STATE, ...saved };
+    } catch(e) { return { ...DEFAULT_STATE }; }
+  }
+  function saveTasks(s){ localStorage.setItem(TASK_KEY, JSON.stringify(s)); }
+
+  function updateWeek(wk){
+    const boxes = document.querySelectorAll(`[data-id^="${wk}-"]`);
+    const total = boxes.length;
+    const done = [...boxes].filter(b=>b.checked).length;
+    const countEl = document.getElementById(`${wk}c`);
+    if(countEl) countEl.textContent = `${done}/${total}`;
+  }
+  function updateSprintPct(){
+    const all = document.querySelectorAll('.tc');
+    const done = [...all].filter(b=>b.checked).length;
+    const pct = all.length ? Math.round((done/all.length)*100) : 0;
+    document.getElementById('sprint-pct').textContent = pct + '% completado';
+    const hb = document.querySelector('.health-bar');
+    if(pct >= 70){ hb.className = 'health-bar green'; }
+    else { hb.className = 'health-bar amber'; }
+  }
+
+  const taskState = loadTasks();
+  document.querySelectorAll('.tc').forEach(cb=>{
+    const id = cb.dataset.id;
+    if(taskState[id]){ cb.checked = true; cb.nextElementSibling.classList.add('done'); }
+    cb.addEventListener('change', ()=>{
+      taskState[id] = cb.checked;
+      saveTasks(taskState);
+      const span = cb.nextElementSibling;
+      if(cb.checked) span.classList.add('done'); else span.classList.remove('done');
+      updateWeek(id.split('-')[0]);
+      updateSprintPct();
+    });
+  });
+  ['w1','w2','w3','w4','m9','rr'].forEach(updateWeek);
+  updateSprintPct();
+</script>
+
+<!-- Datos de la Oficina: la EA actualiza este archivo con cada asignación / entrega / reunión -->
+<script src="office-state.js"></script>
+<script>
+/* ======================= PESTAÑAS ======================= */
+(function(){
+  var tabs = document.querySelectorAll('.tab');
+  function show(t){
+    tabs.forEach(function(b){ b.classList.toggle('on', b.dataset.tab === t); });
+    document.getElementById('tab-ops').hidden = (t !== 'ops');
+    document.getElementById('tab-office').hidden = (t !== 'office');
+    try { history.replaceState(null, '', t === 'office' ? '#oficina' : location.pathname + location.search); } catch(e){}
+    window.dispatchEvent(new Event('office-visibility'));
+  }
+  tabs.forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.tab); }); });
+  if (location.hash === '#oficina') show('office');
+})();
+
+/* ======================= OFICINA ======================= */
+(function(){
+'use strict';
+var W = 512, H = 336, SPEED = 30;
+var wrap = document.getElementById('of-wrap'), stage = document.getElementById('of-stage');
+if (!wrap) return;
+if (!window.OFFICE_STATE) {
+  wrap.style.height = '120px';
+  wrap.innerHTML = '<div style="padding:30px;color:#e5534b;font-family:monospace">No se encontró <b>office-state.js</b> — tiene que estar en la misma carpeta que este dashboard.</div>';
+  return;
+}
+var BASE = JSON.parse(JSON.stringify(window.OFFICE_STATE));
+BASE.agents = BASE.agents || []; BASE.tasks = BASE.tasks || []; BASE.meetings = BASE.meetings || [];
+
+/* ---------- utilidades ---------- */
+function R(c,x,y,w,h,col){ c.fillStyle = col; c.fillRect(x,y,w,h); }
+function rng(seed){ var s = (seed>>>0) || 1; return function(){ s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(ch){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]; }); }
+function pd(s){ if(!s) return null; var p = String(s).split('-').map(Number); return new Date(p[0], (p[1]||1)-1, p[2]||1); }
+function daysSince(s){ var d = pd(s); if(!d) return 999; var t = new Date(); t.setHours(0,0,0,0); return Math.max(0, Math.round((t - d) / 86400000)); }
+function fd(s){ if(!s) return '—'; var p = String(s).split('-'); return p[2] + '/' + p[1] + '/' + p[0]; }
+function isoDaysAgo(n){ var d = new Date(); d.setDate(d.getDate() - n); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function hex(c){ c = String(c||'#F15B45').replace('#',''); if(c.length === 3) c = c.split('').map(function(x){return x+x;}).join(''); var n = parseInt(c,16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+
+/* ---------- distribución de la oficina (coordenadas lógicas 512×336) ---------- */
+var COLS = [56,136,216,296], ROWS = [92,168,244], DH = 20;
+var PREF = ['ms','data','seo','content','webdev','email','linkedin','paid','lead','design',null,'ea'];
+var VX = [16,96,176,256,336], HY = [131,207,300], VTOP = 96, VBOT = 300, HL = 16, HR = 336;
+var MEET_SEATS = [{x:410,y:110},{x:432,y:110},{x:454,y:110},{x:380,y:126},{x:486,y:126},{x:410,y:152},{x:432,y:152},{x:454,y:152},{x:372,y:172},{x:396,y:176},{x:468,y:176},{x:494,y:172}];
+var COOLER = [{x:470,y:240},{x:494,y:246},{x:452,y:232},{x:484,y:266},{x:460,y:262}];
+var LOUNGE = [{x:420,y:318},{x:443,y:318},{x:466,y:318},{x:374,y:266},{x:412,y:270}];
+var MEET_DOOR = {x:360,y:142}, BRK_DOOR = {x:362,y:300};
+var DESKS = {}, DESK_LIST = [];
+
+function layoutDesks(agents){
+  DESKS = {}; DESK_LIST = [];
+  var ids = agents.map(function(a){ return a.id; });
+  var slots = PREF.map(function(id){ return (id && ids.indexOf(id) >= 0) ? id : null; });
+  var extra = ids.filter(function(id){ return slots.indexOf(id) < 0; });
+  for (var i = 0; i < slots.length && extra.length; i++) if (!slots[i]) slots[i] = extra.shift();
+  slots.forEach(function(id, i){
+    var d = { cx: COLS[i%4], top: ROWS[Math.floor(i/4)], id: id, i: i };
+    DESK_LIST.push(d); if (id) DESKS[id] = d;
+  });
+}
+
+/* ---------- caminos: los agentes caminan solo por los pasillos ---------- */
+function hitV(x, ya, yb){ var a = Math.min(ya,yb), b = Math.max(ya,yb); return DESK_LIST.some(function(d){ return x > d.cx-36 && x < d.cx+36 && b > d.top+10 && a < d.top+DH; }); }
+function hitH(y, xa, xb){ var a = Math.min(xa,xb), b = Math.max(xa,xb); return DESK_LIST.some(function(d){ return y > d.top+9 && y < d.top+DH+6 && b > d.cx-26 && a < d.cx+26; }); }
+function onLine(p){
+  var v = null, h = null;
+  VX.forEach(function(X){ if (Math.abs(p.x-X) < .6 && p.y >= VTOP-1 && p.y <= VBOT+1) v = X; });
+  HY.forEach(function(Y){ if (Math.abs(p.y-Y) < .6 && p.x >= HL-1 && p.x <= HR+1) h = Y; });
+  return {v:v, h:h};
+}
+function snap(p){
+  var o = onLine(p); if (o.v != null || o.h != null) return {x:p.x, y:p.y};
+  var c = [];
+  if (p.y >= VTOP-1 && p.y <= VBOT+1) VX.forEach(function(X){ if (!hitH(p.y,p.x,X)) c.push({x:X, y:p.y, k:Math.abs(p.x-X)}); });
+  if (p.x >= HL-1 && p.x <= HR+1) HY.forEach(function(Y){ if (!hitV(p.x,p.y,Y)) c.push({x:p.x, y:Y, k:Math.abs(p.y-Y)}); });
+  if (!c.length) { var X = VX[0]; VX.forEach(function(x){ if (Math.abs(p.x-x) < Math.abs(p.x-X)) X = x; }); return {x:X, y:Math.min(VBOT, Math.max(VTOP, p.y))}; }
+  c.sort(function(a,b){ return a.k - b.k; }); return {x:c[0].x, y:c[0].y};
+}
+function gridPath(a, b){
+  var A = onLine(a), B = onLine(b);
+  if (A.h != null && B.h != null && A.h === B.h) return [b];
+  if (A.v != null && B.v != null && A.v === B.v) return [b];
+  if (A.v != null && B.h != null) return [{x:a.x, y:b.y}, b];
+  if (A.h != null && B.v != null) return [{x:b.x, y:a.y}, b];
+  if (A.v != null && B.v != null) { var Y = HY[0]; HY.forEach(function(y){ if (Math.abs(a.y-y)+Math.abs(b.y-y) < Math.abs(a.y-Y)+Math.abs(b.y-Y)) Y = y; }); return [{x:a.x,y:Y},{x:b.x,y:Y},b]; }
+  if (A.h != null && B.h != null) { var X = VX[0]; VX.forEach(function(x){ if (Math.abs(a.x-x)+Math.abs(b.x-x) < Math.abs(a.x-X)+Math.abs(b.x-X)) X = x; }); return [{x:X,y:a.y},{x:X,y:b.y},b]; }
+  return [b];
+}
+function zone(p){ return p.x >= 349 ? (p.y < 189 ? 'meet' : 'brk') : 'off'; }
+function meetIn(to){ return to.y >= 140 ? [MEET_DOOR, to] : [MEET_DOOR, {x:372,y:142}, {x:372,y:94}, {x:to.x,y:94}, to]; }
+function meetOut(from){ return from.y >= 140 ? [MEET_DOOR] : [{x:from.x,y:94}, {x:372,y:94}, {x:372,y:142}, MEET_DOOR]; }
+function route(from, to){
+  var za = zone(from), zb = zone(to), P = [], a, b, tail;
+  if (za === 'brk' && zb === 'brk') return [{x:to.x, y:to.y}];
+  if (za === 'meet' && zb === 'meet') P = meetOut(from).concat(meetIn(to).slice(1));
+  else {
+    if (za === 'meet') { P = P.concat(meetOut(from)); a = {x:336,y:131}; P.push(a); }
+    else if (za === 'brk') { P.push(BRK_DOOR); a = {x:336,y:300}; P.push(a); }
+    else { a = snap(from); P.push(a); }
+    if (zb === 'meet') { b = {x:336,y:131}; tail = meetIn(to); }
+    else if (zb === 'brk') { b = {x:336,y:300}; tail = [BRK_DOOR, to]; }
+    else { b = snap(to); tail = [to]; }
+    P = P.concat(gridPath(a,b), tail);
+  }
+  var out = [], prev = from;
+  P.forEach(function(p){ if (Math.hypot(p.x-prev.x, p.y-prev.y) > .5) { out.push({x:p.x, y:p.y}); prev = p; } });
+  return out;
+}
+
+/* ---------- Clawd: se toma el ícono de dashboardicons y se recolorea por agente ---------- */
+var CLAWD_URL = 'https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/clawd.png';
+/* Copia local de la cuadrícula de pixeles del mismo ícono (muestreada del PNG de arriba),
+   para que la mascota se vea igual aunque no haya internet (ej. vista previa de Cowork).
+   0 = transparente · 1 = cuerpo (toma el color del agente) · 2 = ojos */
+var CLAWD_LOCAL = ['001111111100','001211112100','111111111111','111111111111','001111111100','001111111100','001010010100','001010010100'];
+var CLAWD = (function(){ var h = CLAWD_LOCAL.length, w = CLAWD_LOCAL[0].length, g = new Uint8Array(w*h); CLAWD_LOCAL.forEach(function(row, r){ for (var q = 0; q < w; q++) g[r*w+q] = +row[q]; }); return {w:w, h:h, grid:g}; })();
+function extractGrid(img){
+  var cv = document.createElement('canvas'); cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+  var x = cv.getContext('2d'); x.drawImage(img,0,0);
+  var d = x.getImageData(0,0,cv.width,cv.height).data, W0 = cv.width, H0 = cv.height;
+  function cls(i,j){ var k = (j*W0+i)*4; if (d[k+3] < 128) return 0; return (d[k]+d[k+1]+d[k+2] < 200) ? 2 : 1; }
+  var x0 = W0, y0 = H0, x1 = 0, y1 = 0, i, j;
+  for (j = 0; j < H0; j++) for (i = 0; i < W0; i++) if (cls(i,j)) { if (i<x0) x0=i; if (i>x1) x1=i; if (j<y0) y0=j; if (j>y1) y1=j; }
+  if (x1 <= x0) return null;
+  var bw = x1-x0+1, bh = y1-y0+1;
+  function best(len, axis){
+    var bestN = 12, bestScore = 1e9;
+    for (var n = 4; n <= 40; n++) {
+      var cell = len/n, err = 0, tot = 0;
+      for (var jj = y0; jj <= y1; jj += 3) for (var ii = x0; ii <= x1; ii += 3) {
+        var ci = axis === 'x' ? Math.min(x1, Math.floor(x0 + (Math.floor((ii-x0)/cell)+.5)*cell)) : ii;
+        var cj = axis === 'y' ? Math.min(y1, Math.floor(y0 + (Math.floor((jj-y0)/cell)+.5)*cell)) : jj;
+        tot++; if (cls(ii,jj) !== cls(ci,cj)) err++;
+      }
+      var score = err/tot + n*0.0015;
+      if (score < bestScore) { bestScore = score; bestN = n; }
+    }
+    return bestN;
+  }
+  var n = best(bw,'x'), m = best(bh,'y'), grid = new Uint8Array(n*m);
+  for (var r = 0; r < m; r++) for (var q = 0; q < n; q++) grid[r*n+q] = cls(Math.floor(x0+(q+.5)*bw/n), Math.floor(y0+(r+.5)*bh/m));
+  return {w:n, h:m, grid:grid};
+}
+function spriteCanvas(color){
+  var c = document.createElement('canvas'), rgb = hex(color);
+  if (CLAWD) {
+    /* +1 px de borde oscuro alrededor para que el personaje resalte sobre el piso */
+    var W2 = CLAWD.w + 2, H2 = CLAWD.h + 2;
+    c.width = W2; c.height = H2;
+    var x = c.getContext('2d'), im = x.createImageData(W2, H2);
+    function at(q, r){ return (q < 0 || r < 0 || q >= CLAWD.w || r >= CLAWD.h) ? 0 : CLAWD.grid[r*CLAWD.w+q]; }
+    for (var r = 0; r < H2; r++) for (var q = 0; q < W2; q++) {
+      var v = at(q-1, r-1), k = (r*W2+q)*4;
+      if (v === 1) { im.data[k]=rgb[0]; im.data[k+1]=rgb[1]; im.data[k+2]=rgb[2]; im.data[k+3]=255; }
+      else if (v === 2) { im.data[k]=17; im.data[k+1]=17; im.data[k+2]=17; im.data[k+3]=255; }
+      else if (at(q-2,r-1) || at(q,r-1) || at(q-1,r-2) || at(q-1,r)) { im.data[k]=40; im.data[k+1]=28; im.data[k+2]=12; im.data[k+3]=175; }
+    }
+    x.putImageData(im,0,0);
+  } else {
+    /* mientras carga el ícono (o si no hay internet): figura genérica */
+    c.width = 12; c.height = 8; var y = c.getContext('2d'), col = 'rgb('+rgb.join(',')+')';
+    R(y,2,1,8,6,col); R(y,1,2,10,4,col); R(y,3,3,1,1,'#111'); R(y,8,3,1,1,'#111');
+  }
+  return c;
+}
+function loadClawd(){
+  var img = new Image(); img.crossOrigin = 'anonymous';
+  img.onload = function(){ var g = null; try { g = extractGrid(img); } catch(e) { g = null; } if (g) { CLAWD = g; refreshSprites(); } };
+  img.src = CLAWD_URL;
+}
+
+/* ---------- fondo pixel art ---------- */
+function drawBG(){
+  var cv = document.getElementById('of-bg'), c = cv.getContext('2d'); c.imageSmoothingEnabled = false;
+  var rnd = rng(20261001), x, y, i;
+  /* piso de madera */
+  var PL = ['#e6cfa6','#ead5ae','#e2c99e','#eedbb6','#e4cda3'];
+  for (y = 48, i = 0; y < 330; y += 8, i++) {
+    var off = (i*19) % 48;
+    for (x = -off; x < 349; x += 48) {
+      R(c,x,y,48,8,PL[Math.floor(rnd()*PL.length)]); R(c,x+1,y,47,1,'rgba(255,250,235,.45)'); R(c,x,y,1,8,'#c9ab7c');
+      if (rnd() < .4) R(c,x+5+Math.floor(rnd()*34),y+3+Math.floor(rnd()*3),2+Math.floor(rnd()*3),1,'rgba(176,138,90,.45)');
+    }
+    R(c,0,y+7,349,1,'rgba(176,140,95,.55)');
+  }
+  /* alfombra del pasillo */
+  R(c,26,290,300,22,'#2d5236'); R(c,28,292,296,18,'#315a3b'); R(c,26,290,300,1,'#a4c868'); R(c,26,311,300,1,'#a4c868');
+  for (x = 34; x < 320; x += 12) { R(c,x,300,5,1,'#3f704b'); R(c,x+2,298,1,5,'#3f704b'); }
+  /* alfombra de la sala de juntas */
+  R(c,348,48,164,134,'#2e5a3d');
+  for (y = 52; y < 180; y += 6) for (x = 352 + ((y/6)%2 ? 3 : 0); x < 510; x += 6) R(c,x,y,1,1,'#3a6b4a');
+  R(c,352,52,156,1,'#24452f'); R(c,352,178,156,1,'#24452f');
+  /* baldosas del break */
+  for (y = 196; y < 330; y += 8) for (x = 348; x < 512; x += 8) { R(c,x,y,8,8,((x+y)/8)%2 ? '#e9e2cd' : '#ddd4ba'); R(c,x,y,8,1,'#cfc5a7'); R(c,x,y,1,8,'#cfc5a7'); }
+  R(c,428,232,76,52,'#c97b52'); R(c,430,234,72,48,'#d68a5f'); R(c,428,232,76,1,'#e8b07c'); R(c,428,283,76,1,'#a85f3c');
+  for (x = 436; x < 500; x += 8) R(c,x,257,4,2,'#e8b07c');
+  /* pared superior */
+  R(c,0,0,512,48,'#1d3624'); R(c,0,0,512,3,'#12231a'); R(c,0,30,512,14,'#22402b');
+  for (x = 0; x < 512; x += 16) R(c,x,31,1,13,'#1a3222');
+  R(c,0,29,512,1,'#a4c868'); R(c,0,44,512,4,'#0f1d12'); R(c,0,44,512,1,'#33573d');
+  function win(wx,wy,w,h){
+    R(c,wx-2,wy-2,w+4,h+4,'#e8f2d8');
+    for (var k = 0; k < h; k++) { var t = k/h; R(c,wx,wy+k,w,1,'rgb('+Math.round(127+78*t)+','+Math.round(196+38*t)+','+Math.round(230+13*t)+')'); }
+    R(c,wx+5,wy+4,10,2,'#fff'); R(c,wx+7,wy+2,5,2,'#fff'); R(c,wx+w-16,wy+7,8,2,'rgba(255,255,255,.85)');
+    for (var q = 0; q < w; q += 6) { var th = 4+Math.floor(rnd()*4); R(c,wx+q,wy+h-th,Math.min(7,w-q),th,'#3f7a3a'); R(c,wx+q+1,wy+h-th,3,1,'#5c9a4a'); }
+    R(c,wx+Math.floor(w/2),wy,1,h,'#e8f2d8'); R(c,wx,wy+Math.floor(h/2),w,1,'rgba(232,242,216,.8)'); R(c,wx-3,wy+h+2,w+6,2,'#c9c9b6');
+  }
+  win(18,6,50,20); win(84,6,50,20);
+  /* tablero de corcho = el Cartel */
+  R(c,146,2,60,32,'#4a2d17'); R(c,148,4,56,28,'#6b4426'); R(c,150,6,52,24,'#c8955a');
+  for (i = 0; i < 70; i++) R(c,150+Math.floor(rnd()*52),6+Math.floor(rnd()*24),1,1, rnd() < .5 ? '#b07f48' : '#d9a76b');
+  var NC = ['#fbe26a','#a9d6f0','#f7b2c4','#c7e6a0','#fbf3b5','#f5c08a'], np = (BASE.pinned || []).length;
+  [[153,9],[165,8],[177,10],[189,8],[156,19],[168,20],[180,19],[191,20]].slice(0, Math.max(3, Math.min(8, np))).forEach(function(p, k){
+    R(c,p[0],p[1],9,8,NC[k % NC.length]); R(c,p[0]+1,p[1]+3,6,1,'rgba(0,0,0,.25)'); R(c,p[0]+1,p[1]+5,5,1,'rgba(0,0,0,.25)'); R(c,p[0]+4,p[1]-1,2,2,'#c0392b'); R(c,p[0]+1,p[1]+8,9,1,'rgba(0,0,0,.18)');
+  });
+  /* reloj */
+  for (y = -7; y <= 7; y++) for (x = -7; x <= 7; x++) { var dd = Math.hypot(x,y); if (dd <= 5.6) R(c,330+x,16+y,1,1,'#f4f1e8'); else if (dd <= 6.8) R(c,330+x,16+y,1,1,'#2b2b2b'); }
+  R(c,330,12,1,5,'#222'); R(c,330,16,4,1,'#c0392b');
+  /* librero */
+  R(c,234,62,44,3,'rgba(0,0,0,.25)'); R(c,236,20,40,43,'#5a381f'); R(c,238,22,36,39,'#3d2614');
+  [32,42,52].forEach(function(sy){ R(c,238,sy,36,2,'#6b4426'); });
+  var BK = ['#c0392b','#2e86de','#f5c842','#a4c868','#e8f2d8','#8e44ad','#e67e22','#16a085'];
+  [[23,9],[34,8],[44,8],[54,7]].forEach(function(r){ var bx = 239; while (bx < 272) { var bw = 2+Math.floor(rnd()*2), bh = r[1]-Math.floor(rnd()*3); R(c,bx,r[0]+(r[1]-bh),bw,bh,BK[Math.floor(rnd()*BK.length)]); bx += bw + (rnd() < .2 ? 2 : 0); } });
+  /* impresora */
+  R(c,286,64,30,3,'rgba(0,0,0,.25)'); R(c,288,50,26,15,'#5d616b'); R(c,288,50,26,1,'#7d828d'); R(c,290,57,22,1,'#4a4d55');
+  R(c,291,40,20,11,'#d9dce0'); R(c,291,40,20,1,'#f0f2f4'); R(c,294,44,14,1,'#3a3d44'); R(c,295,37,12,4,'#fff'); R(c,308,47,2,1,'#2ecc71');
+  /* plantas */
+  function plant(px,py,s){
+    R(c,px-5,py+8,12,3,'rgba(0,0,0,.25)'); R(c,px-4,py+2,9,7,'#8a5a33'); R(c,px-4,py+2,9,1,'#a8743f'); R(c,px-3,py+8,7,1,'#6b4426');
+    var L = ['#2e5e2b','#3f7a3a','#5c9a4a'];
+    for (var k = 0; k < 12*s; k++) { var an = rnd()*Math.PI*2, ds = rnd()*5*s; R(c,Math.round(px+Math.cos(an)*ds)-1,Math.round(py-3*s+Math.sin(an)*ds*.8)-1,3,3,L[Math.floor(rnd()*3)]); }
+  }
+  plant(10,54,1.3); plant(334,56,1.1); plant(12,316,1.2); plant(330,318,1); plant(503,58,1.1); plant(366,206,1.3); plant(503,318,1);
+  /* tabiques de vidrio */
+  function glassV(y1,y2){ R(c,344,y1,4,y2-y1,'rgba(168,220,234,.55)'); R(c,344,y1,1,y2-y1,'rgba(240,250,252,.9)'); R(c,347,y1,1,y2-y1,'#4f7f8a'); for (var gy = y1; gy < y2-2; gy += 24) R(c,343,gy,6,2,'#e8f2d8'); R(c,343,y2-2,6,2,'#e8f2d8'); }
+  glassV(48,116); glassV(150,182); glassV(196,282); glassV(318,330);
+  R(c,343,182,6,14,'#2a4a33');
+  R(c,348,182,164,3,'#3b5e44'); R(c,348,185,164,11,'#1d3624'); R(c,348,193,164,1,'#a4c868'); R(c,348,195,164,1,'#0f1d12');
+  for (x = 352; x < 512; x++) { y = 187 + Math.round(2*Math.sin((x-352)/160*Math.PI)); R(c,x,y,1,1,'#111'); if ((x-352)%10 === 5) { R(c,x-1,y,3,3,'rgba(255,213,107,.3)'); R(c,x,y+1,1,2,'#ffd56b'); } }
+  /* pizarra */
+  R(c,382,4,100,36,'#aab1b8'); R(c,384,6,96,32,'#fbfbf6'); R(c,384,6,96,1,'#fff');
+  R(c,388,10,26,1,'#c0392b'); R(c,388,11,18,1,'#c0392b');
+  for (i = 0; i < 5; i++) { var ly = 15+i*4, lw = 12+Math.floor(rnd()*24); R(c,388,ly,2,1,'#2251a8'); R(c,392,ly,lw,1,'#2251a8'); if (i < 3) R(c,391,ly,lw+2,1,'rgba(192,57,43,.85)'); }
+  R(c,440,10,30,1,'#1e8449'); R(c,444,30,4,4,'#a4c868'); R(c,450,26,4,8,'#a4c868'); R(c,456,20,4,14,'#a4c868'); R(c,462,16,4,18,'#1e8449'); R(c,442,34,28,1,'#555');
+  R(c,384,40,96,2,'#8d939a'); R(c,396,39,5,1,'#c0392b'); R(c,403,39,5,1,'#2251a8'); R(c,410,39,5,1,'#1e8449'); R(c,460,38,8,2,'#3a3d48');
+  /* sillas de la sala de juntas */
+  [410,432,454].forEach(function(sx){ R(c,sx-7,94,14,8,'#2d2f3a'); R(c,sx-7,94,14,1,'#4a4d5c'); R(c,sx-6,138,12,9,'#3a3d4a'); R(c,sx-6,146,12,2,'#2d2f3a'); });
+  R(c,372,114,10,12,'#2d2f3a'); R(c,372,114,10,1,'#4a4d5c'); R(c,482,114,10,12,'#2d2f3a'); R(c,482,114,10,1,'#4a4d5c');
+  /* break: mueble + cafetera + nevera + water cooler */
+  R(c,394,212,62,3,'rgba(0,0,0,.2)'); R(c,394,198,62,14,'#8a8070'); R(c,394,198,62,4,'#cfc8b4'); R(c,394,198,62,1,'#e6e0cf'); R(c,424,203,1,8,'#6f6758');
+  R(c,400,188,12,13,'#2f2f33'); R(c,401,189,10,2,'#4a4a52'); R(c,404,195,4,4,'#111'); R(c,409,191,1,1,'#e74c3c');
+  R(c,416,196,3,3,'#f2f0e6'); R(c,421,196,3,3,'#f2f0e6'); R(c,428,195,4,4,'#c0392b'); R(c,436,196,8,3,'#e9d8a6'); R(c,446,195,3,4,'#5c9a4a');
+  R(c,458,214,20,3,'rgba(0,0,0,.2)'); R(c,460,186,16,28,'#e9eef0'); R(c,460,186,16,1,'#fff'); R(c,460,198,16,1,'#c4cbd0'); R(c,473,190,1,5,'#9aa3a9'); R(c,473,201,1,8,'#9aa3a9');
+  R(c,481,228,19,3,'rgba(0,0,0,.25)'); R(c,483,208,15,21,'#e3e6e8'); R(c,483,208,15,1,'#fff'); R(c,495,208,3,21,'#c5cacd');
+  R(c,486,214,2,2,'#2e86de'); R(c,491,214,2,2,'#e74c3c'); R(c,485,219,10,4,'#9aa3a9'); R(c,486,220,8,2,'#c5cacd');
+  R(c,484,190,13,18,'rgba(111,184,234,.88)'); R(c,485,191,3,14,'rgba(200,236,255,.95)'); R(c,484,194,13,1,'rgba(70,140,200,.9)'); R(c,486,205,9,3,'#3b6fa0'); R(c,488,188,5,2,'#3b6fa0');
+  R(c,500,210,3,14,'#f4f4f4'); R(c,500,210,3,1,'#cfcfcf');
+  /* mesita redonda */
+  R(c,383,262,22,3,'rgba(0,0,0,.2)'); R(c,392,252,2,11,'#8a6a2a');
+  for (y = -8; y <= 8; y++) for (x = -10; x <= 10; x++) if ((x*x)/100 + (y*y)/64 <= 1) R(c,393+x,252+y,1,1, y < -5 ? '#e0b866' : '#c9a14a');
+  R(c,389,249,3,3,'#f2f0e6'); R(c,397,253,3,3,'#f2f0e6');
+  /* sillón */
+  R(c,402,321,84,4,'rgba(0,0,0,.22)'); R(c,404,296,80,10,'#2a6f61'); R(c,404,296,80,1,'#3f8f7f'); R(c,406,306,76,14,'#3a9481'); R(c,406,306,76,1,'#56b09c');
+  R(c,402,300,6,22,'#2a6f61'); R(c,480,300,6,22,'#2a6f61'); R(c,431,307,1,12,'#2f7f6d'); R(c,457,307,1,12,'#2f7f6d'); R(c,410,299,10,6,'#f5c842'); R(c,468,299,10,6,'#e8f2d8');
+  /* banderines (guiño a la imagen de referencia) */
+  var FL = ['#f15b45','#f5c842','#a4c868','#5fd3f3','#b07bea','#f06fb3'];
+  for (x = 6; x <= 340; x++) {
+    var t2 = (x-6)/334, by = Math.round(50 + 9*Math.sin(Math.PI*t2)); R(c,x,by,1,1,'#2b2b2b');
+    if ((x-6)%9 === 4) { var fc = FL[Math.floor((x-6)/9) % FL.length]; R(c,x-2,by+1,5,1,fc); R(c,x-1,by+2,3,1,fc); R(c,x,by+3,1,1,fc); }
+  }
+  /* paredes laterales e inferior + puerta */
+  R(c,0,48,3,282,'#1d3624'); R(c,3,48,1,282,'#2c4a33'); R(c,509,48,3,282,'#1d3624');
+  R(c,0,330,512,6,'#1d3624'); R(c,0,330,512,1,'#a4c868'); R(c,162,330,44,6,'#4a3420'); R(c,162,330,44,1,'#6b4a2c');
+  R(c,166,322,36,8,'#7a3b2e'); R(c,166,324,36,1,'#a24d3c'); R(c,166,327,36,1,'#a24d3c');
+  /* sillas de los escritorios */
+  DESK_LIST.forEach(function(d){ R(c,d.cx-9,d.top-13,18,9,'#2d2f3a'); R(c,d.cx-9,d.top-13,18,1,'#4a4d5c'); R(c,d.cx-8,d.top-4,16,5,'#3a3d4a'); });
+}
+
+/* ---------- escritorios (cada uno en su propio canvas para que el agente quede "detrás") ---------- */
+function mug(c, x, y, steam){ R(c,x,y,4,5,'#f2f0e6'); R(c,x,y,4,1,'#5a3a22'); R(c,x+4,y+1,1,3,'#f2f0e6'); R(c,x,y+4,4,1,'#cfcabb'); if (steam) { R(c,x+1,y-3,1,2,'rgba(255,255,255,.75)'); R(c,x+2,y-5,1,2,'rgba(255,255,255,.5)'); } }
+function drawDesk(cv, o){
+  var c = cv.getContext('2d'), rnd = rng(o.seed); c.clearRect(0,0,60,36);
+  R(c,6,31,52,4,'rgba(0,0,0,.28)');
+  R(c,4,12,52,13,'#8a5a33'); R(c,4,12,52,1,'#b07a46');
+  for (var i = 0; i < 4; i++) R(c,6+Math.floor(rnd()*40),14+Math.floor(rnd()*9),6+Math.floor(rnd()*8),1,'#7c4f2c');
+  R(c,4,25,52,7,'#6b4426'); R(c,4,25,52,1,'#5a381f'); R(c,4,31,52,1,'#4a2d17'); R(c,4,25,1,7,'#5a381f'); R(c,55,25,1,7,'#5a381f'); R(c,29,26,1,5,'#5a381f');
+  R(c,14,28,4,1,'#c9a14a'); R(c,42,28,4,1,'#c9a14a');
+  if (o.vacant) { R(c,40,10,8,6,'#8a5a33'); R(c,39,4,4,4,'#3f7a3a'); R(c,43,2,4,5,'#5c9a4a'); R(c,46,5,3,4,'#2e5e2b'); R(c,14,15,10,7,'#f4f1e8'); return; }
+  R(c,7,19,8,2,'#2b2b33'); R(c,10,15,2,4,'#2b2b33'); R(c,4,4,14,12,'#3a3d48'); R(c,4,4,14,1,'#565a68'); R(c,4,4,1,12,'#4b4f5c'); R(c,10,9,2,2,'#2b2e37');
+  if (o.occupied) { R(c,18,5,1,10,'rgba(140,220,255,.9)'); R(c,19,6,2,8,'rgba(140,220,255,.35)'); R(c,4,16,14,3,'rgba(140,220,255,.18)'); R(c,7,15,2,1,'#7CFC9A'); }
+  R(c,24,15,15,4,'#d9d9d0'); for (i = 0; i < 7; i++) { R(c,25+i*2,16,1,1,'#9c9c90'); R(c,25+i*2,17,1,1,'#9c9c90'); } R(c,24,18,15,1,'#b8b8ac'); R(c,41,16,2,3,'#d9d9d0');
+  if (o.stress) {
+    R(c,42,13,12,9,'#e9e4d6'); R(c,43,12,12,9,'#fbf9f2'); R(c,45,14,7,1,'#b9b4a6'); R(c,45,16,8,1,'#b9b4a6'); R(c,45,18,6,1,'#b9b4a6');
+    [[40,19,1],[46,18,0],[51,12,1],[35,20,0],[25,20,1],[52,19,0],[30,20,0]].forEach(function(m){ mug(c,m[0],m[1],m[2]); });
+  } else {
+    mug(c,47,14,o.occupied);
+    if (rnd() < .5) { R(c,50,20,5,4,'#8a5a33'); R(c,49,16,3,4,'#3f7a3a'); R(c,52,15,3,5,'#5c9a4a'); }
+  }
+}
+function drawTable(cv){
+  var c = cv.getContext('2d'), rnd = rng(77);
+  R(c,4,30,78,4,'rgba(0,0,0,.25)'); R(c,2,6,80,20,'#7a4b2a'); R(c,2,6,80,1,'#9c6438');
+  for (var i = 0; i < 6; i++) R(c,4+Math.floor(rnd()*60),9+Math.floor(rnd()*14),8+Math.floor(rnd()*10),1,'#6c4124');
+  R(c,2,26,80,6,'#5e381e'); R(c,2,31,80,1,'#45281d');
+  R(c,10,11,9,6,'#f4f1e8'); R(c,11,13,6,1,'#b9b4a6'); R(c,64,13,9,6,'#f4f1e8'); R(c,65,15,6,1,'#b9b4a6');
+  R(c,34,9,16,11,'#c9ccd2'); R(c,35,10,14,6,'#2b2e37'); R(c,36,11,12,4,'#7fc8ff'); R(c,35,17,14,2,'#a9adb4');
+  R(c,25,17,2,3,'rgba(200,236,255,.9)'); R(c,58,9,2,3,'rgba(200,236,255,.9)'); R(c,20,8,4,6,'rgba(170,220,250,.8)');
+}
+
+/* ---------- elementos estáticos ---------- */
+var deskEls = [], wbhit, liveSign, cbhit;
+function buildStatic(){
+  DESK_LIST.forEach(function(d){
+    var c = document.createElement('canvas'); c.width = 60; c.height = 36; c.className = 'of-desk';
+    c.style.left = (d.cx-30)+'px'; c.style.top = (d.top-12)+'px'; c.style.zIndex = String(10+d.top+DH); stage.appendChild(c);
+    var pl = document.createElement('div'); pl.className = 'of-plate'; pl.style.left = d.cx+'px'; pl.style.top = (d.top+13)+'px'; pl.style.zIndex = String(11+d.top+DH); stage.appendChild(pl);
+    var nt = document.createElement('div'); nt.className = 'of-note'; nt.hidden = true; nt.style.left = (d.cx+19)+'px'; nt.style.top = (d.top+7)+'px'; nt.style.zIndex = String(12+d.top+DH); stage.appendChild(nt);
+    deskEls.push({c:c, pl:pl, nt:nt, d:d});
+  });
+  cbhit = document.createElement('div'); cbhit.className = 'of-cbhit'; cbhit.title = 'El Cartel: lo que todos deben tener presente'; stage.appendChild(cbhit);
+  cbhit.addEventListener('click', function(e){ e.stopPropagation(); openCartel(cbhit); });
+  var t = document.createElement('canvas'); t.width = 84; t.height = 36; t.className = 'of-desk'; t.style.width = '84px'; t.style.left = '390px'; t.style.top = '100px'; t.style.zIndex = String(10+132); stage.appendChild(t); drawTable(t);
+  function lab(cls, txt, x, y){ var e = document.createElement('div'); e.className = cls; e.textContent = txt; e.style.left = x+'px'; e.style.top = y+'px'; stage.appendChild(e); return e; }
+  lab('of-sign', 'KARL · AGENT HQ', 153, 322);
+  lab('of-label', 'SALA DE JUNTAS', 352, 50);
+  lab('of-label', 'BREAK · WATER COOLER', 352, 198);
+  liveSign = lab('of-live', '● EN SESIÓN', 458, 50); liveSign.hidden = true;
+  wbhit = document.createElement('div'); wbhit.className = 'of-wbhit'; wbhit.title = 'Pizarra: temas tratados y pendientes'; stage.appendChild(wbhit);
+  wbhit.addEventListener('click', function(e){ e.stopPropagation(); openBoard(); });
+}
+
+/* ---------- estado ---------- */
+var AG = {}, ORDER = [], INFO = {}, MEET = null, STATE = BASE, DEMO = null, demo = false, replay = null, replayTimer = null;
+var RES = {};
+function key(p){ return p.x+','+p.y; }
+function release(A){ if (A.spot && RES[key(A.spot)] === A.id) delete RES[key(A.spot)]; A.spot = null; }
+function reserve(A, p){ release(A); A.spot = p; RES[key(p)] = A.id; }
+function isFree(p){ return !RES[key(p)]; }
+function agentData(id){ for (var i = 0; i < STATE.agents.length; i++) if (STATE.agents[i].id === id) return STATE.agents[i]; return null; }
+function nameOf(id){ var a = agentData(id); return a ? a.name : id; }
+
+/* ---------- Cartel (pinned) y Pasar la voz (broadcasts) ---------- */
+var EA_ID = 'ea', BOARD_SPOT = {x:176, y:96}, TOUR = null, TOUR_HIDE = {}, autoTourDone = false;
+function pinsFor(id){ return (STATE.pinned || []).filter(function(p){ return p.for === 'all' || (p.for || []).indexOf(id) >= 0; }); }
+function recips(b){ var all = STATE.agents.map(function(a){ return a.id; }); return b.to === 'all' ? all.filter(function(id){ return id !== EA_ID; }) : (b.to || []).filter(function(id){ return all.indexOf(id) >= 0; }); }
+function sortedBcs(){ return (STATE.broadcasts || []).slice().sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); }); }
+function newBcsFor(id){ return sortedBcs().filter(function(b){ return daysSince(b.date) <= 3 && recips(b).indexOf(id) >= 0; }); }
+function forChips(f){ return f === 'all' ? '<span class="of-chip">Todos</span>' : (f || []).map(function(x){ return chip(x, false); }).join(''); }
+function tourPoint(id){ var d = DESKS[id]; return {x:d.cx, y:d.top+34}; }
+function startTour(b){
+  var A = AG[EA_ID]; if (!A || !b) return;
+  var stops = recips(b).filter(function(id){ return DESKS[id]; }).sort(function(x,y){ return DESKS[x].i - DESKS[y].i; });
+  if (!stops.length) return;
+  TOUR_HIDE = {}; stops.forEach(function(id){ TOUR_HIDE[id] = true; });
+  TOUR = { b:b, stops:stops, i:0, waitUntil:0 };
+  release(A); A.fixed = true; A.waitUntil = 0; A.path = route(A.pos, tourPoint(stops[0]));
+  renderDesks(); renderHud();
+}
+function tourStep(A, ts){
+  if (A.path.length) return;
+  if (!TOUR.waitUntil) {
+    var sid = TOUR.stops[TOUR.i], R2 = AG[sid];
+    A.flash = { t:'📣', until: ts + 1700 }; delete TOUR_HIDE[sid]; renderDesks();
+    if (R2 && Math.hypot(R2.pos.x-A.pos.x, R2.pos.y-A.pos.y) < 70) R2.flash = { t:'👍', until: ts + 2200 };
+    TOUR.waitUntil = ts + 1700;
+  } else if (ts > TOUR.waitUntil) {
+    TOUR.i++; TOUR.waitUntil = 0;
+    if (TOUR.i < TOUR.stops.length) A.path = route(A.pos, tourPoint(TOUR.stops[TOUR.i]));
+    else { TOUR = null; TOUR_HIDE = {}; assign(false); }
+  }
+}
+function maybeAutoTour(){
+  if (autoTourDone || !visible()) return; autoTourDone = true;
+  var b = sortedBcs().filter(function(x){ return daysSince(x.date) <= 2; })[0];
+  if (b) setTimeout(function(){ startTour(b); }, 1800);
+}
+
+function compute(S){
+  var tasks = (S.tasks || []).filter(function(t){ return t && t.status !== 'done'; });
+  var meet = replay ? replay.m : ((S.meetings || []).filter(function(m){ return m.active; })[0] || null);
+  var res = {};
+  S.agents.forEach(function(a){
+    var id = a.id;
+    function inv(t){ return t.lead === id || (t.collaborators || []).indexOf(id) >= 0; }
+    var open = tasks.filter(function(t){ return (t.status === 'active' || t.status === 'pending') && inv(t); });
+    var actLead = tasks.filter(function(t){ return t.status === 'active' && t.lead === id; });
+    var actCol = tasks.filter(function(t){ return t.status === 'active' && t.lead !== id && (t.collaborators || []).indexOf(id) >= 0; });
+    var days = daysSince(a.lastDelivery && a.lastDelivery.date);
+    var stress = open.length >= 3, mode = 'idle', host = null;
+    if (meet && (meet.attendees || []).indexOf(id) >= 0) mode = 'meet';
+    else if (actLead.length || stress) mode = 'desk';
+    else if (actCol.length && DESKS[actCol[0].lead]) { mode = 'collab'; host = actCol[0].lead; }
+    res[id] = { mode: mode, host: host, open: open, days: days, stress: stress, bored: !stress && mode === 'idle' && days >= 14 };
+  });
+  return { res: res, meet: meet };
+}
+
+function makeAgent(a){
+  var d = document.createElement('div'); d.className = 'of-agent';
+  var sh = document.createElement('div'); sh.className = 'of-shadow';
+  var sp = spriteCanvas(a.color); sp.className = 'of-sprite';
+  var bub = document.createElement('div'); bub.className = 'of-bubble';
+  var tag = document.createElement('div'); tag.className = 'of-tag'; tag.textContent = a.plate || a.name;
+  d.appendChild(sh); d.appendChild(sp); d.appendChild(bub); d.appendChild(tag); stage.appendChild(d);
+  var A = { id:a.id, data:a, el:d, sprite:sp, bub:bub, tag:tag, pos:{x:0,y:0}, path:[], fixed:false, inited:false, waitUntil:0, spot:null, where:null, flash:null, bubKey:'', paused:false };
+  d.addEventListener('click', function(e){ e.stopPropagation(); openAgent(A.id); });
+  return A;
+}
+function refreshSprites(){
+  Object.keys(AG).forEach(function(id){ var A = AG[id], n = spriteCanvas(A.data.color); n.className = 'of-sprite'; A.el.replaceChild(n, A.sprite); A.sprite = n; });
+  renderLegend();
+}
+function collabSpot(d, n){
+  var s = [{x:d.cx-36,y:d.top+14},{x:d.cx+36,y:d.top+14},{x:d.cx-13,y:d.top+34},{x:d.cx+13,y:d.top+34},{x:d.cx-36,y:d.top+32},{x:d.cx+36,y:d.top+32}];
+  return s[n % s.length];
+}
+function goTo(A, t, instant){ if (instant) { A.pos = {x:t.x, y:t.y}; A.path = []; } else A.path = route(A.pos, t); }
+function pickWander(A){
+  var r = Math.random(), f;
+  if (A && Math.random() < .2 && pinsFor(A.id).length && isFree(BOARD_SPOT)) return {p:BOARD_SPOT, where:'board'};
+  if (r < .5) { f = COOLER.filter(isFree); if (f.length) return {p:pick(f), where:'cooler'}; }
+  else if (r < .66) { f = LOUNGE.filter(isFree); if (f.length) return {p:pick(f), where:'lounge'}; }
+  if (Math.random() < .55) return {p:{x:Math.round(HL+8+Math.random()*(HR-HL-16)), y:pick(HY)}, where:'aisle'};
+  return {p:{x:pick(VX), y:Math.round(140+Math.random()*150)}, where:'aisle'};
+}
+function startIdle(A, instant){
+  var w = pickWander(A); A.where = w.where;
+  if (w.where !== 'aisle') reserve(A, w.p); else release(A);
+  if (instant) { A.pos = {x:w.p.x, y:w.p.y}; A.path = []; A.waitUntil = performance.now() + 1500 + Math.random()*7000; }
+  else { A.path = route(A.pos, w.p); A.waitUntil = 0; if (!A.path.length) arrive(A, performance.now()); }
+}
+function arrive(A, ts){
+  if (A.fixed) return;
+  A.waitUntil = ts + (A.where === 'aisle' ? 1200 + Math.random()*3000 : A.where === 'board' ? 4000 + Math.random()*3000 : 6000 + Math.random()*10000);
+  if (A.where === 'board') A.flash = { t: '📌 leyendo el Cartel', until: ts + 3800 };
+  else if (A.where === 'cooler' && Math.random() < .5) A.flash = { t: pick(['☕','💧','jaja','♪','🍪','¿y si…?']), until: ts + 3200 };
+}
+
+function assign(instant){
+  STATE = demo ? DEMO : BASE;
+  var C = compute(STATE); INFO = C.res; MEET = C.meet;
+  var ids = STATE.agents.map(function(a){ return a.id; });
+  Object.keys(AG).forEach(function(id){ if (ids.indexOf(id) < 0) { release(AG[id]); AG[id].el.remove(); delete AG[id]; } });
+  STATE.agents.forEach(function(a){ if (!AG[a.id]) AG[a.id] = makeAgent(a); AG[a.id].data = a; });
+  ORDER = ids;
+  var seatI = 0, colN = {};
+  ORDER.forEach(function(id){
+    var A = AG[id], r = INFO[id], t = null;
+    if (TOUR && id === EA_ID && A.inited) return;
+    if (r.mode === 'meet') t = MEET_SEATS[seatI++ % MEET_SEATS.length];
+    else if (r.mode === 'desk' && DESKS[id]) t = {x:DESKS[id].cx, y:DESKS[id].top+8};
+    else if (r.mode === 'collab') { var n = colN[r.host] || 0; colN[r.host] = n+1; t = collabSpot(DESKS[r.host], n); }
+    if (t) { A.fixed = true; A.waitUntil = 0; reserve(A, t); goTo(A, t, instant || !A.inited); }
+    else {
+      var was = A.fixed; A.fixed = false;
+      if (!A.inited || instant) startIdle(A, true);
+      else if (was) { release(A); A.path = []; A.waitUntil = 1; }
+    }
+    A.inited = true;
+  });
+  renderDesks(); renderHud(); renderLegend();
+  liveSign.hidden = !MEET;
+  var now = performance.now();
+  ORDER.forEach(function(id){ paint(AG[id], now); });
+}
+
+/* ---------- animación ---------- */
+var last = 0;
+function visible(){ return !document.getElementById('tab-office').hidden; }
+function paint(A, ts){
+  var e = A.el, r = INFO[A.id] || {};
+  e.style.left = A.pos.x.toFixed(1)+'px'; e.style.top = A.pos.y.toFixed(1)+'px'; e.style.zIndex = String(10+Math.round(A.pos.y));
+  var walking = A.path.length > 0 && !A.paused;
+  e.classList.toggle('walk', walking);
+  e.classList.toggle('type', !walking && A.fixed && (r.mode === 'desk' || r.mode === 'collab'));
+  var txt = '', cls = '';
+  if (TOUR && A.id === EA_ID) { txt = '📣'; }
+  else if (r.stress && !walking) { txt = '＞﹏＜'; cls = 'stress'; }
+  else if (r.bored) { txt = '¯\\_(ツ)_/¯'; cls = 'bored'; }
+  else if (A.flash && ts < A.flash.until && !walking) { txt = A.flash.t; }
+  else if (!walking && (r.mode === 'desk' || r.mode === 'collab')) { txt = '• • •'; cls = 'dots'; }
+  var k = txt+'|'+cls;
+  if (k !== A.bubKey) { A.bubKey = k; A.bub.textContent = txt; A.bub.className = 'of-bubble' + (txt ? ' show' : '') + (cls ? ' '+cls : ''); }
+}
+var lastRaf = 0;
+function tick(ts){ lastRaf = performance.now(); requestAnimationFrame(tick); frame(ts); }
+/* respaldo: algunos visores embebidos no disparan requestAnimationFrame */
+setInterval(function(){ if (performance.now() - lastRaf > 500) frame(performance.now()); }, 50);
+function frame(ts){
+  var dt = Math.max(0, Math.min(.05, (ts - (last || ts)) / 1000)); last = Math.max(last, ts);
+  if (!visible()) return;
+  ORDER.forEach(function(id){
+    var A = AG[id]; if (!A) return;
+    var r = INFO[id] || {};
+    if (TOUR && id === EA_ID && !A.paused && !A.path.length) tourStep(A, ts);
+    if (!A.paused) {
+      if (A.path.length) {
+        var p = A.path[0], dx = p.x-A.pos.x, dy = p.y-A.pos.y, d = Math.hypot(dx,dy), st = SPEED*dt;
+        if (d <= st) { A.pos.x = p.x; A.pos.y = p.y; A.path.shift(); if (!A.path.length) arrive(A, ts); }
+        else { A.pos.x += dx/d*st; A.pos.y += dy/d*st; }
+      } else if (!A.fixed && A.waitUntil && ts > A.waitUntil) { A.waitUntil = 0; startIdle(A, false); }
+      else if (r.mode === 'meet' && (!A.flash || ts > A.flash.until) && Math.random() < dt*0.12) A.flash = { t: pick(['💬','💡','👍','¿?','📊','✓']), until: ts + 2600 };
+    }
+    paint(A, ts);
+  });
+}
+
+/* ---------- render: escritorios, HUD, leyenda ---------- */
+function renderDesks(){
+  deskEls.forEach(function(o){
+    var id = o.d.id, A = id && AG[id], r = id ? INFO[id] : null;
+    drawDesk(o.c, { vacant: !A, occupied: !!(r && r.mode === 'desk'), stress: !!(r && r.stress), seed: o.d.i*97+7 });
+    o.nt.hidden = !(A && newBcsFor(id).length && !TOUR_HIDE[id]);
+    o.pl.textContent = A ? (A.data.plate || A.data.name).toUpperCase() : 'VACANTE';
+    o.pl.classList.toggle('vac', !A);
+  });
+}
+function statusText(id){
+  var r = INFO[id]; if (!r) return ['',''];
+  if (r.mode === 'meet') return ['🗣 En la Sala de Juntas',''];
+  if (r.stress) return ['＞﹏＜ '+r.open.length+' tareas abiertas','stress'];
+  if (r.mode === 'desk') return ['⌨ En su escritorio',''];
+  if (r.mode === 'collab') return ['🤝 En el escritorio de '+nameOf(r.host),''];
+  if (r.bored) return ['¯\\_(ツ)_/¯ '+r.days+' días sin entregar','bored'];
+  return ['☕ Libre · sin tareas en curso',''];
+}
+function legendExtra(id){ var n = newBcsFor(id).length; return n ? ' · 📣 aviso nuevo' : ''; }
+function renderHud(){
+  var vals = Object.keys(INFO).map(function(k){ return INFO[k]; });
+  function n(f){ return vals.filter(f).length; }
+  document.getElementById('of-stats').innerHTML =
+    '<span class="of-stat">⌨ <b>'+n(function(r){return r.mode==='desk'||r.mode==='collab';})+'</b> trabajando</span>'+
+    '<span class="of-stat">🗣 <b>'+n(function(r){return r.mode==='meet';})+'</b> en reunión</span>'+
+    '<span class="of-stat">☕ <b>'+n(function(r){return r.mode==='idle';})+'</b> libres</span>'+
+    '<span class="of-stat" style="color:#e5534b">＞﹏＜ <b>'+n(function(r){return r.stress;})+'</b> sobrecargados</span>'+
+    '<span class="of-stat" style="color:#f5c842">¯\\_(ツ)_/¯ <b>'+n(function(r){return r.bored;})+'</b> sin actividad</span>';
+  document.getElementById('of-sub').textContent = 'Datos: office-state.js · actualizado ' + fd(STATE.updated) + (STATE.updatedBy ? ' por ' + STATE.updatedBy : '');
+  var bn = document.getElementById('of-banner'), parts = [];
+  if (demo) parts.push('<span>🧪 MODO DEMO — datos de ejemplo, no son reales.</span>');
+  if (replay) parts.push('<span>🗣 Reunión en curso: <b>'+esc(replay.m.title)+'</b></span><button class="of-btn sm" id="of-end" type="button">■ Terminar reunión</button>');
+  if (TOUR) parts.push('<span>📣 La EA está pasando la voz: <b>'+esc(TOUR.b.text.length > 110 ? TOUR.b.text.slice(0,110)+'…' : TOUR.b.text)+'</b></span>');
+  bn.hidden = !parts.length; bn.innerHTML = parts.join('');
+  var eb = document.getElementById('of-end'); if (eb) eb.onclick = endReplay;
+  /* letrero LED + contador del corcho */
+  var pins = STATE.pinned || [], tk = document.getElementById('of-tk-txt');
+  var line = pins.map(function(p){ return '📌 ' + p.text + '  — ' + nameOf(p.from); }).join('     ✦     ');
+  if (tk.textContent !== line) { tk.textContent = line || 'Nada fijado en el Cartel por ahora.'; tk.style.animationDuration = Math.max(30, Math.round(line.length * 0.2)) + 's'; }
+  document.getElementById('of-ticker').hidden = !pins.length;
+  if (cbhit) cbhit.setAttribute('data-n', String(pins.length));
+  var av = document.getElementById('of-avisos'), nb = sortedBcs().filter(function(b){ return daysSince(b.date) <= 3; }).length;
+  av.textContent = '📣 Avisos' + (nb ? ' (' + nb + ' nuevo' + (nb > 1 ? 's' : '') + ')' : '');
+  document.getElementById('of-cartel').textContent = '📌 Cartel (' + pins.length + ')';
+}
+function renderLegend(){
+  var lg = document.getElementById('of-legend'); lg.innerHTML = '';
+  ORDER.forEach(function(id){
+    var A = AG[id], st = statusText(id), b = document.createElement('button');
+    b.className = 'of-leg'; b.type = 'button';
+    b.appendChild(spriteCanvas(A.data.color));
+    var tx = document.createElement('div');
+    tx.innerHTML = '<div class="of-leg-n">'+esc(A.data.name)+'</div><div class="of-leg-s '+st[1]+'">'+esc(st[0] + legendExtra(id))+'</div>';
+    b.appendChild(tx); b.addEventListener('click', function(){ callAgent(id); }); lg.appendChild(b);
+  });
+}
+function callAgent(id){
+  var A = AG[id]; if (!A) return;
+  wrap.scrollIntoView({behavior:'smooth', block:'center'});
+  A.el.classList.add('called');
+  setTimeout(function(){ A.el.classList.remove('called'); openAgent(id); }, 900);
+}
+
+/* ---------- pop-ups ---------- */
+var MODAL = null;
+function openModal(card, originEl, onClose){
+  closeModal(true);
+  var m = document.createElement('div'); m.className = 'of-modal'; m.appendChild(card); document.body.appendChild(m);
+  var r = originEl.getBoundingClientRect(), ox = r.left + r.width/2 - innerWidth/2, oy = r.top + r.height/2 - innerHeight/2;
+  card.style.transition = 'none'; card.style.transform = 'translate('+ox+'px,'+oy+'px) scale(.06)'; card.style.opacity = '0';
+  void card.offsetWidth;
+  card.style.transition = ''; card.style.transform = ''; card.style.opacity = '1';
+  m.addEventListener('mousedown', function(e){ if (e.target === m) closeModal(); });
+  card.querySelectorAll('.of-x').forEach(function(x){ x.addEventListener('click', function(){ closeModal(); }); });
+  MODAL = { m:m, card:card, ox:ox, oy:oy, onClose:onClose };
+}
+function closeModal(now){
+  if (!MODAL) return; var M = MODAL; MODAL = null;
+  function done(){ M.m.remove(); if (M.onClose) M.onClose(); }
+  if (now) { done(); return; }
+  M.card.style.transform = 'translate('+M.ox+'px,'+M.oy+'px) scale(.06)'; M.card.style.opacity = '0'; M.m.style.background = 'rgba(4,8,4,0)';
+  setTimeout(done, 280);
+}
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeModal(); });
+
+function chip(id, isLead){ var a = agentData(id); if (!a) return ''; return '<span class="of-chip"><i style="background:'+esc(a.color)+'"></i>'+esc(a.plate || a.name)+(isLead ? ' ★' : '')+'</span>'; }
+function taskHTML(t){
+  var ids = [t.lead].concat(t.collaborators || []).filter(function(x,i,a){ return a.indexOf(x) === i; });
+  var st = {active:'EN CURSO', pending:'POR INICIAR', stalled:'SIN MOVIMIENTO', done:'HECHO'}[t.status] || t.status;
+  var age = t.since ? ('desde ' + fd(t.since) + (t.status === 'stalled' ? ' · ' + daysSince(t.since) + ' días' : '')) : '';
+  return '<div class="of-task '+esc(t.status)+'"><b>'+esc(t.title)+'</b>'+(t.detail ? '<small>'+esc(t.detail)+'</small>' : '')+
+         '<div class="meta"><span class="of-st '+esc(t.status)+'">'+st+'</span>'+(ids.length > 1 ? ids.map(function(x){ return chip(x, x === t.lead); }).join('') : '')+'<span>'+esc(age)+'</span></div></div>';
+}
+function moodOf(id){
+  var r = INFO[id] || {};
+  if (r.mode === 'meet') return {c:'meet', t:'🗣 En la Sala de Juntas' + (MEET ? ' — ' + MEET.title : '')};
+  if (r.stress) return {c:'stress', t:'＞﹏＜ Sobrecargado — ' + r.open.length + ' tareas abiertas'};
+  if (r.mode === 'desk') return {c:'work', t:'⌨ Trabajando en su escritorio'};
+  if (r.mode === 'collab') return {c:'work', t:'🤝 Trabajando en el escritorio de ' + nameOf(r.host)};
+  if (r.bored) return {c:'bored', t:'¯\\_(ツ)_/¯ Sin entregas hace ' + r.days + ' días'};
+  return {c:'chill', t:'☕ Disponible — sin tareas en curso'};
+}
+function openAgent(id){
+  var A = AG[id]; if (!A) return;
+  var a = A.data, tasks = (STATE.tasks || []).filter(function(t){ return t.status !== 'done'; });
+  function lead(t){ return t.lead === id; }
+  function col(t){ return t.lead !== id && (t.collaborators || []).indexOf(id) >= 0; }
+  var act = tasks.filter(function(t){ return t.status === 'active' && lead(t); });
+  var pen = tasks.filter(function(t){ return t.status === 'pending' && lead(t); });
+  var cl  = tasks.filter(function(t){ return (t.status === 'active' || t.status === 'pending') && col(t); });
+  var stl = tasks.filter(function(t){ return t.status === 'stalled' && (lead(t) || col(t)); });
+  function sec(title, list, always){ if (!list.length && !always) return ''; return '<div class="of-sec"><h4>'+title+'</h4>'+(list.length ? list.map(taskHTML).join('') : '<div class="of-empty">Nada por ahora.</div>')+'</div>'; }
+  var m = moodOf(id), ld = a.lastDelivery || {};
+  var card = document.createElement('div'); card.className = 'of-card';
+  card.innerHTML =
+    '<button class="of-x" type="button" aria-label="Cerrar">✕</button>' +
+    '<div class="of-ch"><div class="of-avw"></div><div><div class="of-cn">'+esc(a.name)+'</div><div class="of-cr">'+esc(a.role || '')+'</div><div class="of-mood '+m.c+'">'+esc(m.t)+'</div></div></div>' +
+    sec('En curso', act, true) + sec('Colabora en', cl) + sec('Por iniciar', pen) + sec('Sin movimiento', stl) +
+    (function(){ var ps = pinsFor(id); return ps.length ? '<div class="of-sec"><h4>📌 Tenlo presente (Cartel)</h4>' + ps.map(function(p){ return '<div class="of-task pin"><b>'+esc(p.text)+'</b><div class="meta"><span>de '+esc(nameOf(p.from))+' · '+fd(p.date)+(p.source ? ' · '+esc(p.source) : '')+'</span></div></div>'; }).join('') + '</div>' : ''; })() +
+    (function(){ var bs = sortedBcs().filter(function(b){ return recips(b).indexOf(id) >= 0; }).slice(0,3); return bs.length ? '<div class="of-sec"><h4>📣 Avisos recibidos</h4>' + bs.map(function(b){ return '<div class="of-task bc"><b>'+esc(b.text)+'</b><div class="meta"><span>'+(daysSince(b.date) <= 3 ? '<b style="color:#5fd3f3">NUEVO</b> · ' : '')+'de '+esc(b.from || 'Alim')+' vía EA · '+fd(b.date)+'</span></div></div>'; }).join('') + '</div>' : ''; })() +
+    '<div class="of-sec"><h4>Última entrega</h4><div class="of-task"><b>'+esc(ld.text || 'Sin registro')+'</b><div class="meta"><span>'+(ld.date ? fd(ld.date)+' · hace '+daysSince(ld.date)+' días' : '')+'</span></div></div></div>' +
+    '<div class="of-foot">Chat: '+esc(a.chatLog || '—')+' · datos al '+fd(STATE.updated)+'</div>';
+  var av = spriteCanvas(a.color); av.className = 'of-av'; card.querySelector('.of-avw').appendChild(av);
+  A.paused = true;
+  openModal(card, A.sprite, function(){ A.paused = false; A.el.classList.remove('lifted'); });
+  A.el.classList.add('lifted');
+}
+function openBoard(){
+  var S = STATE, h = '<button class="of-x" type="button" aria-label="Cerrar">✕</button>';
+  h += '<h3 class="red">Próximos temas</h3><ul>' + (S.upcoming || []).map(function(t){ return '<li>'+esc(t)+'</li>'; }).join('') + '</ul>';
+  var ms = (S.meetings || []).slice().sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); });
+  ms.forEach(function(m){
+    var tp = m.topics || [], done = tp.filter(function(t){ return t.status === 'resolved'; }).length;
+    var live = m.active || (replay && replay.m.id === m.id);
+    h += '<div class="wb-m"><div class="wb-mh"><span class="blue">'+fd(m.date)+' — '+esc(m.title)+'</span>'+(live ? '<span class="wb-live">EN SESIÓN</span>' : '')+
+         '<span class="green" style="font-size:21px">'+done+'/'+tp.length+' resueltos</span>'+
+         (m.active ? '' : '<button class="of-btn sm" type="button" data-replay="'+esc(m.id)+'">▶ Reunirlos de nuevo</button>')+'</div>'+
+         '<div class="wb-att" data-att="'+esc(m.id)+'"></div><ul>'+tp.map(function(t){ return '<li class="'+(t.status === 'resolved' ? 'done' : 'open')+'">'+esc(t.text)+'</li>'; }).join('')+'</ul></div>';
+  });
+  h += '<div class="wb-tray"></div>';
+  var card = document.createElement('div'); card.className = 'of-wb'; card.innerHTML = h;
+  ms.forEach(function(m){
+    var box = card.querySelector('[data-att="'+(window.CSS && CSS.escape ? CSS.escape(m.id) : m.id)+'"]'); if (!box) return;
+    (m.attendees || []).forEach(function(id){ var a = agentData(id); if (!a) return; var cv = spriteCanvas(a.color); cv.title = a.name; box.appendChild(cv); });
+  });
+  card.querySelectorAll('[data-replay]').forEach(function(b){
+    b.addEventListener('click', function(){ var m = ms.filter(function(x){ return x.id === b.dataset.replay; })[0]; closeModal(); setTimeout(function(){ startReplay(m); }, 320); });
+  });
+  openModal(card, wbhit, null);
+}
+
+function openCartel(origin){
+  var pins = STATE.pinned || [];
+  var h = '<button class="of-x" type="button" aria-label="Cerrar">✕</button>' +
+          '<h3>📌 El Cartel — lo que todos tenemos presente</h3>' +
+          '<div class="of-cork-sub">Hallazgos y reglas que vienen de meses o sesiones anteriores y deben guiar las próximas tareas. Cada agente lo ve también en su ficha.</div>' +
+          '<div class="of-notes">' + (pins.length ? pins.map(function(p){
+            return '<div class="of-pin">'+esc(p.text)+'<div class="who">De '+chip(p.from, false)+' · '+fd(p.date)+(p.source ? ' · '+esc(p.source) : '')+'</div><div class="who">Para: '+forChips(p.for)+'</div></div>';
+          }).join('') : '<div class="of-pin">Nada fijado por ahora.</div>') + '</div>';
+  var card = document.createElement('div'); card.className = 'of-cork'; card.innerHTML = h;
+  openModal(card, origin || cbhit, null);
+}
+function openAvisos(origin){
+  var bs = sortedBcs();
+  var h = '<button class="of-x" type="button" aria-label="Cerrar">✕</button>' +
+          '<div class="of-ch"><div><div class="of-cn">📣 Pasar la voz</div><div class="of-cr">Avisos que Alim le pidió a la EA comunicar. Los de los últimos 3 días dejan una nota amarilla en el escritorio de cada destinatario.</div></div></div>';
+  h += bs.length ? bs.map(function(b, k){
+    return '<div class="of-task bc"><b>'+esc(b.text)+'</b><div class="meta"><span>'+(daysSince(b.date) <= 3 ? '<b style="color:#5fd3f3">NUEVO</b> · ' : '')+'de '+esc(b.from || 'Alim')+' vía EA · '+fd(b.date)+'</span></div>'+
+           '<div class="of-bc-to">'+(b.to === 'all' ? '<span class="of-chip">Todos los agentes</span>' : recips(b).map(function(x){ return chip(x, false); }).join(''))+'</div>'+
+           '<div style="margin-top:8px"><button class="of-btn sm" type="button" data-tour="'+k+'">▶ Que la EA pase la voz otra vez</button></div></div>';
+  }).join('') : '<div class="of-empty">Sin avisos todavía.</div>';
+  var card = document.createElement('div'); card.className = 'of-card'; card.innerHTML = h;
+  card.querySelectorAll('[data-tour]').forEach(function(btn){
+    btn.addEventListener('click', function(){ var b = bs[+btn.dataset.tour]; closeModal(); setTimeout(function(){ startTour(b); }, 320); });
+  });
+  openModal(card, origin, null);
+}
+document.getElementById('of-cartel').addEventListener('click', function(e){ openCartel(e.currentTarget); });
+document.getElementById('of-ticker').addEventListener('click', function(e){ openCartel(e.currentTarget); });
+document.getElementById('of-avisos').addEventListener('click', function(e){ openAvisos(e.currentTarget); });
+window.addEventListener('office-visibility', function(){ maybeAutoTour(); });
+document.addEventListener('visibilitychange', function(){ maybeAutoTour(); });
+
+/* ---------- reuniones y demo ---------- */
+function startReplay(m){ if (!m) return; replay = { m: m }; clearTimeout(replayTimer); replayTimer = setTimeout(endReplay, 35000); assign(false); }
+function endReplay(){ clearTimeout(replayTimer); replay = null; assign(false); }
+function buildDemo(){
+  var D = JSON.parse(JSON.stringify(BASE)), today = isoDaysAgo(0);
+  function has(id){ return D.agents.some(function(a){ return a.id === id; }); }
+  if (has('seo')) D.tasks.push({ id:'demo-col', title:'DEMO · Reescritura de títulos y metas (prioridad #3 de octubre)', lead:'seo', collaborators:['content','ms'].filter(has), status:'active', since:today, detail:'Ejemplo: varios agentes en la misma tarea se juntan en el escritorio del líder.' });
+  if (has('linkedin')) ['Calendario de octubre','Carrusel de auditoría','Post de caso de cliente'].forEach(function(t,i){ D.tasks.push({ id:'demo-li'+i, title:'DEMO · '+t, lead:'linkedin', collaborators:[], status: i ? 'pending' : 'active', since:today, detail:'Ejemplo de agente sobrecargado (3+ tareas abiertas).' }); });
+  D.agents.forEach(function(a){ if (a.id === 'lead') a.lastDelivery = { date: isoDaysAgo(31), text:'DEMO · ejemplo de agente sin entregas en un mes.' }; });
+  D.meetings = [{ id:'demo-m', date:today, title:'DEMO · Kickoff de octubre', active:true, attendees:['ea','email','design','data'].filter(has), topics:[{text:'Ejemplo de tema resuelto', status:'resolved'},{text:'Ejemplo de tema abierto', status:'open'}] }].concat(D.meetings);
+  return D;
+}
+var demoBtn = document.getElementById('of-demo');
+demoBtn.addEventListener('click', function(){
+  demo = !demo; if (demo) DEMO = buildDemo(); replay = null; clearTimeout(replayTimer);
+  demoBtn.classList.toggle('on', demo); demoBtn.textContent = demo ? '■ Salir del demo' : '▶ Modo demo';
+  assign(false);
+});
+
+/* ---------- escala ---------- */
+function fit(){ var w = wrap.clientWidth; if (!w) return; var s = w / W; stage.style.transform = 'scale('+s+')'; wrap.style.height = Math.round(H*s)+'px'; }
+if (window.ResizeObserver) new ResizeObserver(fit).observe(wrap);
+window.addEventListener('resize', fit);
+window.addEventListener('office-visibility', fit);
+
+/* ---------- arranque ---------- */
+layoutDesks(BASE.agents);
+drawBG();
+buildStatic();
+assign(true);
+fit();
+loadClawd();
+requestAnimationFrame(tick);
+maybeAutoTour();
+})();
+</script>
+
+</body>
+</html>
